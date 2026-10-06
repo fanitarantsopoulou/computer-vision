@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gesture-vision"
+version = "0.1.0"
+description = "Real-time hand tracking foundation for gesture-driven 3D interaction."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # 1.0.1 aborts on macOS during HandLandmarker init (Metal "Service is unavailable"); 1.0.0 is verified.
+    "mediapipe==1.0.0",
+    # mediapipe already depends on opencv-contrib-python; declared explicitly because we import cv2.
+    # Do not also install opencv-python: both provide the cv2 module and conflict.
+    "opencv-contrib-python>=4.8",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+gesture-vision = "gesture_vision.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
