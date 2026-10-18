@@ -51,7 +51,7 @@ class AirCanvas:
         if pinching and not self._was_pinching:
             self._grabbed = self.object_at(cursor)
             if self._grabbed is not None:  # bring to front
-                self.objects.remove(self._grabbed)
+                self.objects = [o for o in self.objects if o is not self._grabbed]  # == would compare numpy arrays
                 self.objects.append(self._grabbed)
         elif not pinching and self._was_pinching:
             if self._grabbed is not None:
