@@ -7,17 +7,19 @@ import { PinchDetector } from "../src/gestures/pinch.js";
 
 const map = JSON.parse(readFileSync(new URL("../src/data/greece-map.json", import.meta.url), "utf8"));
 
-test("every regional unit on the map belongs to exactly one prefecture", () => {
-  const owner = new Map();
-  for (const p of PREFECTURES) {
-    for (const u of p.units) {
-      assert.ok(map.units[u], `${p.id}: unknown unit ${u}`);
-      assert.ok(!owner.has(u), `${u} is in both ${owner.get(u)} and ${p.id}`);
-      owner.set(u, p.id);
-    }
+test("the map has a shape for every prefecture (plus Mount Athos) and nothing else", () => {
+  const ids = Object.keys(map.shapes).filter((id) => id !== "athos").sort();
+  assert.deepEqual(ids, PREFECTURES.map((p) => p.id).sort());
+  for (const d of Object.values(map.shapes)) assert.match(d, /^M[\d. L-]+Z/);
+});
+
+test("every OSM regional unit is assigned to exactly one prefecture", () => {
+  const seen = new Set();
+  for (const u of PREFECTURES.flatMap((p) => p.units)) {
+    assert.ok(!seen.has(u), `${u} is in two prefectures`);
+    seen.add(u);
   }
-  const missing = Object.keys(map.units).filter((u) => !owner.has(u));
-  assert.deepEqual(missing, []);
+  assert.equal(seen.size, 74);
 });
 
 test("prefecture ids and names are unique", () => {

@@ -1,7 +1,7 @@
 import { PinchDetector } from "./gestures/pinch.js";
 import { classifyPose, fingerExtensions, indexCurled, pinchDistance, pinchPoint } from "./gestures/geometry.js";
 
-const SMOOTHING = 0.5; // EMA weight of the previous cursor position
+const SMOOTHING = 0.35; // EMA weight of the previous cursor position
 const MARGIN_X = 0.12; // the outer part of the camera view is unreachable with the hand; stretch the rest to the screen
 const MARGIN_Y = 0.1;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
