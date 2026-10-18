@@ -1,0 +1,62 @@
+const KEY = "gesture-vision-settings";
+const DEFAULTS = { avatar: "girl", enterWidth: 0.14, showPreview: false, cameraId: "" };
+
+export function loadSettings() {
+  try {
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") };
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
+function save(s) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(s));
+  } catch {
+    /* private mode etc.: settings just won't persist */
+  }
+}
+
+/** Wires the teacher panel. `onChange(settings, changedKey)` fires after every edit. */
+export function initSettingsPanel(settings, { onChange }) {
+  const panel = document.getElementById("settings");
+  const set = (key, value) => {
+    settings[key] = value;
+    save(settings);
+    onChange(settings, key);
+  };
+
+  const toggle = (open = panel.hidden) => {
+    panel.hidden = !open;
+  };
+  document.getElementById("gear").addEventListener("click", () => toggle());
+  document.getElementById("set-close").addEventListener("click", () => toggle(false));
+  addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "t" && !e.target.matches("input, select")) toggle();
+  });
+
+  for (const r of panel.querySelectorAll('input[name="avatar"]')) {
+    r.checked = r.value === settings.avatar;
+    r.addEventListener("change", () => r.checked && set("avatar", r.value));
+  }
+  const dist = document.getElementById("set-distance");
+  dist.value = settings.enterWidth;
+  dist.addEventListener("input", () => set("enterWidth", Number(dist.value)));
+
+  const preview = document.getElementById("set-preview");
+  preview.checked = settings.showPreview;
+  preview.addEventListener("change", () => set("showPreview", preview.checked));
+
+  const cam = document.getElementById("set-camera");
+  cam.addEventListener("change", () => set("cameraId", cam.value));
+
+  return {
+    /** Lists cameras; labels are only available after the user granted camera access. */
+    async refreshCameras() {
+      const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
+      cam.replaceChildren(
+        ...devices.map((d, i) => new Option(d.label || `Κάμερα ${i + 1}`, d.deviceId, false, d.deviceId === settings.cameraId)),
+      );
+    },
+  };
+}
