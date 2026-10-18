@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="el">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Γνωρίζω την Ελλάδα</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <div id="scene"></div>
+
+      <div id="hud" hidden><span id="score">⭐ 0</span></div>
+      <div id="clouds"></div>
+
+      <aside id="map-card">
+        <svg id="map" aria-label="Χάρτης της Ελλάδας"></svg>
+        <p id="map-caption">Πού βρίσκεται;</p>
+      </aside>
+
+      <div id="avatar" hidden></div>
+      <div id="bubble" hidden></div>
+      <div id="prompt" hidden><span class="small">Νομός</span><strong id="prefecture"></strong></div>
+
+      <div id="idle">
+        <h1>Γνωρίζω την Ελλάδα</h1>
+        <p class="wave">👋 Πλησίασε για να παίξουμε!</p>
+        <p id="status" class="status">Φορτώνει η κάμερα…</p>
+      </div>
+
+      <div id="cursor" hidden></div>
+      <video id="cam" playsinline muted></video>
+
+      <button id="gear" title="Ρυθμίσεις δασκάλου (T)" aria-label="Ρυθμίσεις δασκάλου">⚙</button>
+      <div id="settings" hidden>
+        <h2>Ρυθμίσεις δασκάλου</h2>
+        <fieldset>
+          <legend>Μαθητής</legend>
+          <label><input type="radio" name="avatar" value="boy" /> 👦 Αγόρι</label>
+          <label><input type="radio" name="avatar" value="girl" /> 👧 Κορίτσι</label>
+        </fieldset>
+        <label class="row">Απόσταση έναρξης
+          <input id="set-distance" type="range" min="0.06" max="0.3" step="0.01" />
+          <span class="hint">κοντά ← → μακριά</span>
+        </label>
+        <label class="row">Κάμερα
+          <select id="set-camera"></select>
+        </label>
+        <label class="row inline"><input id="set-preview" type="checkbox" /> Δείξε προεπισκόπηση κάμερας</label>
+        <p class="hint">Η εικόνα της κάμερας δεν εμφανίζεται ποτέ στο παιχνίδι ούτε αποθηκεύεται.</p>
+        <button id="set-close">Κλείσιμο</button>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
