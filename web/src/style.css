@@ -2,7 +2,7 @@
   --ink: #1d3b6f;
   --card: rgba(255, 255, 255, 0.82);
   --land: #f3e9c6;
-  --land-edge: #c9b87a;
+  --land-edge: #a88f4a;
   --lit: #ff9f1c;
   font-family: "Trebuchet MS", "Segoe UI", "Comic Sans MS", system-ui, sans-serif;
 }
@@ -18,7 +18,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
   background: var(--card); border-radius: 28px; box-shadow: 0 8px 28px rgba(20, 60, 120, 0.25); text-align: center;
 }
 #map { width: 100%; height: auto; display: block; }
-#map .unit { fill: var(--land); stroke: var(--land-edge); stroke-width: 1.2; stroke-linejoin: round; transition: fill 0.4s; }
+#map .unit { fill: var(--land); stroke: var(--land-edge); stroke-width: 2; stroke-linejoin: round; transition: fill 0.4s; }
+#map .unit.athos { fill: #e3d9b3; }
 #map .unit.lit { fill: var(--lit); stroke: #b35c00; stroke-width: 2.5; filter: drop-shadow(0 0 8px #ffcf70); animation: pulse 1s ease-in-out 3; }
 #map-caption { margin: 0.6vh 0 0; font-size: clamp(16px, 2.2vh, 28px); font-weight: 700; }
 @keyframes pulse { 50% { filter: drop-shadow(0 0 22px #fff3b0); } }
@@ -31,7 +32,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 }
 .cloud svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .cloud svg path { fill: #fff; transition: fill 0.2s; }
-.cloud span { position: relative; font-weight: 800; color: var(--ink); text-align: center; line-height: 1.05; padding: 0 12%; }
+.cloud span { position: relative; font-weight: 800; color: var(--ink); text-align: center; line-height: 1.05; padding: 0 8%; }
 .cloud.hover svg path { fill: #fff6c9; }
 .cloud::after { /* dwell ring */
   content: ""; position: absolute; inset: -6%; border-radius: 50%; opacity: 0; pointer-events: none;
@@ -102,3 +103,25 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #settings select { font-size: 15px; padding: 4px; }
 #settings, #settings * { cursor: auto; }
 #settings button, #settings input, #settings select { cursor: pointer; }
+
+/* Idle-screen setup panel (teacher) */
+#setup {
+  position: absolute; left: 16px; bottom: 16px; z-index: 6; width: 290px; display: flex; flex-direction: column; gap: 10px;
+  padding: 14px 16px; border-radius: 18px; background: var(--card); box-shadow: 0 8px 24px rgba(20, 60, 120, 0.25); cursor: default; font-size: 16px;
+}
+#setup, #setup * { cursor: auto; }
+#setup button, #setup input { cursor: pointer; }
+#setup input[type="text"] { cursor: text; }
+#setup .field { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+#setup .field.inline { flex-direction: row; align-items: center; justify-content: space-between; }
+#setup input { font: inherit; padding: 6px 10px; border: 2px solid #b9cbe8; border-radius: 10px; color: var(--ink); background: #fff; }
+#setup input[type="number"] { width: 5em; text-align: center; }
+#setup .seg { display: flex; gap: 8px; }
+#setup .seg button { flex: 1; padding: 10px 6px; border: 3px solid #b9cbe8; border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-weight: 700; }
+#setup .seg button.on { border-color: var(--lit); background: #fff1d6; }
+
+/* End screen */
+#end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 36vw; text-align: center; }
+#end h2 { margin: 0; font-size: clamp(36px, 10vh, 120px); color: #fff; text-shadow: 0 4px 0 #2a7bd0, 0 8px 18px rgba(0,0,0,0.25); }
+#end p { margin: 1.5vh 0 0; font-size: clamp(20px, 4.5vh, 52px); font-weight: 800; background: var(--card); padding: 1vh 2.4vw; border-radius: 40px; }
+#end #end-stars { background: none; font-size: clamp(30px, 8vh, 90px); }

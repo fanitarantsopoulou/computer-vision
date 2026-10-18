@@ -1,5 +1,5 @@
 const KEY = "gesture-vision-settings";
-const DEFAULTS = { avatar: "girl", enterWidth: 0.14, showPreview: false, cameraId: "" };
+const DEFAULTS = { avatar: "girl", rounds: 10, enterWidth: 0.14, showPreview: false, cameraId: "" };
 
 export function loadSettings() {
   try {
@@ -9,7 +9,7 @@ export function loadSettings() {
   }
 }
 
-function save(s) {
+export function saveSettings(s) {
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {
@@ -22,7 +22,7 @@ export function initSettingsPanel(settings, { onChange }) {
   const panel = document.getElementById("settings");
   const set = (key, value) => {
     settings[key] = value;
-    save(settings);
+    saveSettings(settings);
     onChange(settings, key);
   };
 
@@ -35,10 +35,6 @@ export function initSettingsPanel(settings, { onChange }) {
     if (e.key.toLowerCase() === "t" && !e.target.matches("input, select")) toggle();
   });
 
-  for (const r of panel.querySelectorAll('input[name="avatar"]')) {
-    r.checked = r.value === settings.avatar;
-    r.addEventListener("change", () => r.checked && set("avatar", r.value));
-  }
   const dist = document.getElementById("set-distance");
   dist.value = settings.enterWidth;
   dist.addEventListener("input", () => set("enterWidth", Number(dist.value)));

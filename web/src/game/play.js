@@ -1,7 +1,10 @@
 import { Deck } from "./deck.js";
 
-const DWELL_S = 1.3; // hold an open hand over a cloud this long to pick it
-const NEXT_ROUND_S = 3.2;
+const DWELL_S = 0.6; // hold an open hand over a cloud this long to pick it
+const NEXT_ROUND_S = 2.4;
+const CLOUDS = 6; // one right answer and five wrong ones
+const LANES = 4;
+const SPEED = 0.1; // fall speed, in screen heights per second
 const WRONG_COOLDOWN_S = 1.4;
 const WRONG_MESSAGES = ["Προσπάθησε ξανά!", "Σχεδόν! Δοκίμασε ξανά.", "Ωχ! Ξαναπροσπάθησε!"];
 const CHEERS = ["Μπράβο!", "Σωστά!", "Εξαιρετικά!", "Τα κατάφερες!"];
@@ -13,12 +16,17 @@ const cloudSvg = `<svg viewBox="0 0 220 130" preserveAspectRatio="none" aria-hid
 /** The falling-clouds quiz: DOM clouds, hit-testing, dwell/pinch selection and feedback. */
 export class Play {
   constructor({ prefectures, map, els }) {
-    this.deck = new Deck(prefectures);
+    this.deck = new Deck(prefectures, { choices: CLOUDS });
     this.map = map;
     this.els = els; // {clouds, prompt, prefecture, bubble, avatar, caption, score}
     this.clouds = [];
     this.round = null;
-    this.score = 0;
+    this.score = 0; // questions answered right on the first try
+    this.total = Infinity;
+    this.asked = 0;
+    this.attempts = 0;
+    this.pupil = "";
+    this.onFinish = () => {};
     this.locked = false;
     this.nextIn = 0;
     this.bubbleIn = 0;
@@ -27,10 +35,14 @@ export class Play {
     this.size = { w: innerWidth, h: innerHeight };
   }
 
-  start() {
+  /** Begins a session of `rounds` questions for the (optional) pupil name. */
+  start({ rounds, name = "" }) {
     this.score = 0;
-    this.showScore();
+    this.asked = 0;
+    this.total = rounds;
+    this.pupil = name;
     this.newRound();
+    if (name) this.say(`Γεια σου, ${name}!`, true, 2.5);
   }
 
   stop() {
@@ -44,18 +56,26 @@ export class Play {
 
   resize(w, h) {
     this.size = { w, h };
-    const cw = Math.min(260, Math.max(150, w * 0.17));
+    const cw = Math.min(230, Math.max(120, ((w * 0.49) / LANES) * 0.95));
     for (const c of this.clouds) {
       c.w = cw;
       c.h = cw * 0.6;
       c.el.style.width = `${c.w}px`;
       c.el.style.height = `${c.h}px`;
-      c.span.style.fontSize = `${Math.max(18, cw * 0.15)}px`;
+      // Shrink long single words (e.g. Αλεξανδρούπολη) so they stay inside the cloud.
+      const longest = Math.max(...c.label.split(" ").map((x) => x.length));
+      c.span.style.fontSize = `${Math.min(cw * 0.17, (cw * 0.84) / (longest * 0.62))}px`;
     }
   }
 
+  // Clouds fall in a band toward the middle of the screen: far-left positions would push the hand out of the camera view.
+  // The map card takes the right side.
+  get playLeft() {
+    return this.size.w * 0.13;
+  }
+
   get playWidth() {
-    return this.size.w * 0.64; // the left part of the screen; the map card takes the right
+    return this.size.w * 0.49;
   }
 
   get ground() {
@@ -64,6 +84,9 @@ export class Play {
 
   newRound() {
     this.round = this.deck.next();
+    this.asked += 1;
+    this.attempts = 0;
+    this.showScore();
     this.locked = false;
     this.map.light([]);
     this.els.caption.textContent = "Πού βρίσκεται;";
@@ -80,7 +103,7 @@ export class Play {
       span.textContent = label;
       el.appendChild(span);
       this.els.clouds.appendChild(el);
-      return { el, span, label, lane: i, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall", y0: -(i * 0.3) };
+      return { el, span, label, lane: i % LANES, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall", y0: -(i * 0.2) };
     });
     this.resize(this.size.w, this.size.h);
     this.clouds.forEach((c) => {
@@ -89,7 +112,9 @@ export class Play {
   }
 
   respawn(c) {
-    c.y = -c.h - Math.random() * this.size.h * 0.15;
+    // Re-enter above the highest cloud in the same lane so clouds don't overlap.
+    const top = Math.min(...this.clouds.filter((o) => o !== c && o.lane === c.lane).map((o) => o.y), Infinity);
+    c.y = Math.min(-c.h, top - c.h * 1.4);
     c.state = "fall";
     c.el.classList.remove("wrong");
   }
@@ -99,7 +124,10 @@ export class Play {
     this.time += dt;
     if (this.bubbleIn > 0 && (this.bubbleIn -= dt) <= 0) this.hideBubble();
     if (this.locked) {
-      if ((this.nextIn -= dt) <= 0) this.newRound();
+      if ((this.nextIn -= dt) <= 0) {
+        if (this.asked >= this.total) this.finish();
+        else this.newRound();
+      }
       this.place(dt, null);
       return;
     }
@@ -107,7 +135,7 @@ export class Play {
   }
 
   place(dt, pointer) {
-    const speed = this.size.h * 0.05;
+    const speed = this.size.h * SPEED;
     const laneW = this.playWidth / this.clouds.length;
     let hovered = null;
     let best = Infinity;
@@ -118,7 +146,7 @@ export class Play {
         if (c.y > this.ground) this.respawn(c);
       }
       if (c.cooldown > 0) c.cooldown -= dt;
-      const cx = laneW * (c.lane + 0.5) + Math.sin(this.time * 0.6 + c.phase) * laneW * 0.08;
+      const cx = this.playLeft + laneW * (c.lane + 0.5) + Math.sin(this.time * 0.6 + c.phase) * laneW * 0.08;
       c.x = cx;
       c.el.style.transform = `translate(${cx - c.w / 2}px, ${c.y}px)`;
 
@@ -154,15 +182,16 @@ export class Play {
       cloud.state = "right";
       cloud.el.classList.add("right");
       for (const c of this.clouds) if (c !== cloud) c.el.classList.add("fade");
-      this.map.light(this.round.prefecture.units);
+      this.map.light([this.round.prefecture.id]);
       this.els.caption.textContent = `Νομός ${this.round.prefecture.name}`;
-      this.score += 1;
+      if (this.attempts === 0) this.score += 1;
       this.showScore();
-      this.say(`${CHEERS[this.score % CHEERS.length]} ${cloud.label}`, true);
+      this.say(`${CHEERS[this.asked % CHEERS.length]} ${cloud.label}`, true);
       this.els.avatar.classList.remove("cheer");
       void this.els.avatar.offsetWidth; // restart the animation
       this.els.avatar.classList.add("cheer");
     } else {
+      this.attempts += 1;
       cloud.state = "wrong";
       cloud.cooldown = WRONG_COOLDOWN_S;
       cloud.el.classList.add("wrong");
@@ -171,12 +200,12 @@ export class Play {
     }
   }
 
-  say(text, good) {
+  say(text, good, seconds = good ? NEXT_ROUND_S : 2) {
     const b = this.els.bubble;
     b.textContent = text;
     b.className = good ? "good" : "";
     b.hidden = false;
-    this.bubbleIn = good ? NEXT_ROUND_S : 2;
+    this.bubbleIn = seconds;
   }
 
   hideBubble() {
@@ -185,6 +214,13 @@ export class Play {
   }
 
   showScore() {
-    this.els.score.textContent = `⭐ ${this.score}`;
+    const who = this.pupil ? `${this.pupil} · ` : "";
+    this.els.score.textContent = `${who}Ερώτηση ${Math.min(this.asked, this.total)}/${this.total} · ⭐ ${this.score}`;
+  }
+
+  finish() {
+    const result = { score: this.score, total: this.total, name: this.pupil };
+    this.stop();
+    this.onFinish(result);
   }
 }
