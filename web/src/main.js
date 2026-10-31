@@ -220,7 +220,7 @@ function frame(now) {
   if (state === "playing") {
     const p = pointer.get(now);
     play.update(dt, p);
-    cursorEl.hidden = !p;
+    cursorEl.hidden = !p || p.source === "mouse"; // the mouse keeps its normal arrow; the orange ring is for the hand
     if (p) {
       cursorEl.style.transform = `translate(${p.x}px, ${p.y}px)`;
       cursorEl.classList.toggle("pinch", p.pinching);
