@@ -3,7 +3,8 @@ import { Deck } from "./deck.js";
 const DWELL_S = 0.6; // hold an open hand over a cloud this long to pick it
 const NEXT_ROUND_S = 3.5; // long enough to see the arrow on the map
 const CLOUDS = 6; // one right answer and five wrong ones
-const LANES = 4;
+const LANES = 3;
+const SPACING = 1.5; // vertical gap between consecutive clouds, in cloud heights
 const SPEED = 0.1; // fall speed, in screen heights per second
 const WRONG_COOLDOWN_S = 1.4;
 const WRONG_MESSAGES = ["Προσπάθησε ξανά!", "Σχεδόν! Δοκίμασε ξανά.", "Ωχ! Ξαναπροσπάθησε!"];
@@ -73,7 +74,7 @@ export class Play {
 
   resize(w, h) {
     this.size = { w, h };
-    const cw = Math.min(230, Math.max(120, ((w * 0.49) / LANES) * 0.95));
+    const cw = Math.min(240, Math.max(130, ((w * 0.49) / LANES) * 0.82));
     for (const c of this.clouds) {
       c.w = cw;
       c.h = cw * 0.6;
@@ -120,18 +121,18 @@ export class Play {
       span.textContent = label;
       el.appendChild(span);
       this.els.clouds.appendChild(el);
-      return { el, span, label, lane: i % LANES, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall", y0: -(i * 0.2) };
+      return { el, span, label, lane: i % LANES, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall" };
     });
     this.resize(this.size.w, this.size.h);
-    this.clouds.forEach((c) => {
-      c.y = c.y0 * this.size.h - c.h; // staggered entry from above
+    this.clouds.forEach((c, i) => {
+      c.y = -c.h * (1 + i * SPACING); // staggered entry from above, each cloud in its own row
     });
   }
 
   respawn(c) {
-    // Re-enter above the highest cloud in the same lane so clouds don't overlap.
-    const top = Math.min(...this.clouds.filter((o) => o !== c && o.lane === c.lane).map((o) => o.y), Infinity);
-    c.y = Math.min(-c.h, top - c.h * 1.4);
+    // Re-enter above the highest cloud, so no two clouds are ever side by side at the same height.
+    const top = Math.min(...this.clouds.filter((o) => o !== c).map((o) => o.y), Infinity);
+    c.y = Math.min(-c.h, top - c.h * SPACING);
     c.state = "fall";
     c.el.classList.remove("wrong");
   }

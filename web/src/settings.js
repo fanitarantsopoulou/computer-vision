@@ -1,5 +1,5 @@
 const KEY = "gesture-vision-settings";
-const DEFAULTS = { avatar: "girl", rounds: 10, enterWidth: 0.14, showPreview: false, cameraId: "" };
+const DEFAULTS = { avatar: "girl", rounds: 10, autoStart: false, enterWidth: 0.14, showPreview: false, cameraId: "" };
 
 export function loadSettings() {
   try {
@@ -38,6 +38,10 @@ export function initSettingsPanel(settings, { onChange }) {
   const dist = document.getElementById("set-distance");
   dist.value = settings.enterWidth;
   dist.addEventListener("input", () => set("enterWidth", Number(dist.value)));
+
+  const auto = document.getElementById("set-auto");
+  auto.checked = settings.autoStart;
+  auto.addEventListener("change", () => set("autoStart", auto.checked));
 
   const preview = document.getElementById("set-preview");
   preview.checked = settings.showPreview;

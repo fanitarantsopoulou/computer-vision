@@ -37,7 +37,7 @@
 
       <div id="idle">
         <h1>Γνωρίζω την Ελλάδα</h1>
-        <p class="wave">👋 Πλησίασε για να παίξουμε!</p>
+        <p id="idle-hint" class="wave"></p>
         <p id="status" class="status">Φορτώνει η κάμερα…</p>
       </div>
 
@@ -62,6 +62,7 @@
         <label class="field inline">Ερωτήσεις
           <input id="rounds" type="number" min="1" max="52" step="1" inputmode="numeric" />
         </label>
+        <button id="start" type="button">▶ Έναρξη</button>
       </div>
 
       <div id="cursor" hidden></div>
@@ -77,6 +78,7 @@
         <label class="row">Κάμερα
           <select id="set-camera"></select>
         </label>
+        <label class="row inline"><input id="set-auto" type="checkbox" /> Αυτόματη έναρξη όταν πλησιάζει μαθητής</label>
         <label class="row inline"><input id="set-preview" type="checkbox" /> Δείξε προεπισκόπηση κάμερας</label>
         <p class="hint">Η εικόνα της κάμερας δεν εμφανίζεται ποτέ στο παιχνίδι ούτε αποθηκεύεται.</p>
         <button id="set-close">Κλείσιμο</button>

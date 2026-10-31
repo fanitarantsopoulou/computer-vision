@@ -146,3 +146,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #map .arrow path { fill: #e53935; stroke: #fff; stroke-width: 6; stroke-linejoin: round; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
 #map .arrow .bob { animation: arrow-bob 0.6s ease-in-out infinite alternate; }
 @keyframes arrow-bob { to { transform: translateY(-22px); } }
+
+#setup #start { padding: 12px; border: 0; border-radius: 14px; background: #2e9a3f; color: #fff; font: inherit; font-size: 20px; font-weight: 800; box-shadow: 0 4px 0 #1f6e2c; }
+#setup #start:hover { background: #38b04b; }

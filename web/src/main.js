@@ -38,12 +38,18 @@ const panel = initSettingsPanel(settings, {
   onChange: (s, key) => {
     if (key === "showPreview") video.classList.toggle("preview", s.showPreview);
     if (key === "cameraId") startCamera();
+    if (key === "autoStart") showIdleHint();
   },
 });
 function renderAvatar() {
   $("avatar").innerHTML = avatarSvg(settings.avatar);
 }
-const setup = initSetup(settings, { onAvatar: renderAvatar });
+const startGame = () => setState("playing", performance.now());
+const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame });
+function showIdleHint() {
+  $("idle-hint").textContent = settings.autoStart ? "👋 Πλησίασε για να παίξουμε!" : "Πάτα Έναρξη όταν είσαι έτοιμος/η!";
+}
+showIdleHint();
 renderAvatar();
 video.classList.toggle("preview", settings.showPreview);
 
@@ -122,10 +128,10 @@ addEventListener("keydown", (e) => {
   else if (e.key === "Escape" && state !== "idle") stopSession();
 });
 
-// Clicking or tapping always starts a session: lets the teacher start it, and covers setups without a camera.
+// A game only starts from the Start button (or automatically when enabled), so the teacher has time to enter the pupil's details.
 stage.addEventListener("pointerdown", (e) => {
   if (e.target.closest("[data-ui]")) return;
-  setState(state === "idle" ? "playing" : state === "done" ? "idle" : state, performance.now());
+  if (state === "done") setState("idle", performance.now());
 });
 
 // --- camera and tracking ---
@@ -146,7 +152,7 @@ async function startCamera() {
     status.textContent = tracker ? "Η κάμερα είναι έτοιμη." : "Φορτώνει το σύστημα παρακολούθησης χεριών…";
   } catch (e) {
     console.warn(e);
-    status.textContent = "Δεν βρέθηκε κάμερα. Πάτα οπουδήποτε και παίξε με το ποντίκι.";
+    status.textContent = "Δεν βρέθηκε κάμερα. Πάτησε Έναρξη και παίξε με το ποντίκι.";
   }
 }
 
@@ -156,7 +162,7 @@ async function startTracker() {
     status.textContent = stream ? "Η κάμερα είναι έτοιμη." : status.textContent;
   } catch (e) {
     console.error(e);
-    status.textContent = "Δεν φορτώθηκε το σύστημα παρακολούθησης χεριών. Πάτα οπουδήποτε και παίξε με το ποντίκι.";
+    status.textContent = "Δεν φορτώθηκε το σύστημα παρακολούθησης χεριών. Πάτησε Έναρξη και παίξε με το ποντίκι.";
   }
 }
 startCamera();
@@ -179,9 +185,10 @@ function frame(now) {
     if (state === "done") {
       // wait for the end screen to finish
     } else if (state === "idle") {
-      nearSince = near ? nearSince || now : 0;
+      nearSince = near && settings.autoStart ? nearSince || now : 0;
       if (nearSince && now - nearSince > ENTER_HOLD_MS) setState("playing", now);
-    } else if (now - lastNearAt > LEAVE_AFTER_MS) {
+    } else if (settings.autoStart && now - lastNearAt > LEAVE_AFTER_MS) {
+      // Only for auto-started sessions; a teacher-started one ends via the end screen or the controls.
       setState("idle", now);
     }
   } else if (state === "playing" && !tracker && pointer.get(now)) {
