@@ -3,7 +3,8 @@ import { Deck } from "./deck.js";
 const DWELL_S = 0.6; // hold an open hand over a cloud this long to pick it
 const NEXT_ROUND_S = 3.5; // long enough to see the arrow on the map
 const CLOUDS = 6; // one right answer and five wrong ones
-const LANES = 3;
+const SIZE_LANES = 3; // clouds are sized as if the band held this many side by side
+const SLOT_WEIGHTS = [0.6, 0.9, 1.3, 1.5, 1.4]; // where a cloud can fall across the band; the middle and the map side are likelier
 const SPACING = 1.5; // vertical gap between consecutive clouds, in cloud heights
 const SPEED = 0.1; // fall speed, in screen heights per second
 const WRONG_COOLDOWN_S = 1.4;
@@ -75,7 +76,7 @@ export class Play {
 
   resize(w, h) {
     this.size = { w, h };
-    const cw = Math.min(240, Math.max(130, ((w * 0.49) / LANES) * 0.82));
+    const cw = Math.min(240, Math.max(130, ((w * 0.46) / SIZE_LANES) * 0.82));
     for (const c of this.clouds) {
       c.w = cw;
       c.h = cw * 0.6;
@@ -90,11 +91,11 @@ export class Play {
   // Clouds fall in a band toward the middle of the screen: far-left positions would push the hand out of the camera view.
   // The map card takes the right side.
   get playLeft() {
-    return this.size.w * 0.13;
+    return this.size.w * 0.2;
   }
 
   get playWidth() {
-    return this.size.w * 0.49;
+    return this.size.w * 0.46;
   }
 
   get ground() {
@@ -123,18 +124,31 @@ export class Play {
       span.textContent = label;
       el.appendChild(span);
       this.els.clouds.appendChild(el);
-      return { el, span, label, lane: i % LANES, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall" };
+      return { el, span, label, slot: 0, x: 0, y: 0, w: 0, h: 0, phase: Math.random() * 6.28, dwell: 0, cooldown: 0, state: "fall" };
     });
     this.resize(this.size.w, this.size.h);
+    let prev = null;
     this.clouds.forEach((c, i) => {
       c.y = -c.h * (1 + i * SPACING); // staggered entry from above, each cloud in its own row
+      c.slot = this.pickSlot(prev);
+      prev = c.slot;
     });
+  }
+
+  /** A random horizontal slot, at least two slots away from the cloud just above/below so neighbours never sit side by side. */
+  pickSlot(prevSlot) {
+    const ok = SLOT_WEIGHTS.map((w, s) => (prevSlot === null || Math.abs(s - prevSlot) >= 2 ? w : 0));
+    let r = Math.random() * ok.reduce((a, b) => a + b, 0);
+    for (let s = 0; s < ok.length; s++) if ((r -= ok[s]) < 0) return s;
+    return Math.floor(SLOT_WEIGHTS.length / 2);
   }
 
   respawn(c) {
     // Re-enter above the highest cloud, so no two clouds are ever side by side at the same height.
     const top = Math.min(...this.clouds.filter((o) => o !== c).map((o) => o.y), Infinity);
     c.y = Math.min(-c.h, top - c.h * SPACING);
+    const above = this.clouds.filter((o) => o !== c).reduce((a, b) => (b.y < a.y ? b : a), { y: Infinity });
+    c.slot = this.pickSlot(above.slot ?? null);
     c.state = "fall";
     c.el.classList.remove("wrong");
   }
@@ -157,7 +171,7 @@ export class Play {
 
   place(dt, pointer) {
     const speed = this.size.h * SPEED;
-    const laneW = this.playWidth / this.clouds.length;
+    const slotW = this.playWidth / SLOT_WEIGHTS.length;
     let hovered = null;
     let best = Infinity;
 
@@ -167,7 +181,7 @@ export class Play {
         if (c.y > this.ground) this.respawn(c);
       }
       if (c.cooldown > 0) c.cooldown -= dt;
-      const cx = this.playLeft + laneW * (c.lane + 0.5) + Math.sin(this.time * 0.6 + c.phase) * laneW * 0.08;
+      const cx = this.playLeft + slotW * (c.slot + 0.5) + Math.sin(this.time * 0.6 + c.phase) * slotW * 0.1;
       c.x = cx;
       c.el.style.transform = `translate(${cx - c.w / 2}px, ${c.y}px)`;
 
