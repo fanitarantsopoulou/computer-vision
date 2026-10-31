@@ -1,7 +1,7 @@
 import { saveSettings } from "./settings.js";
 
 /** Teacher controls on the idle screen: pupil name, boy/girl, number of questions. */
-export function initSetup(settings, { onAvatar }) {
+export function initSetup(settings, { onAvatar, onStart }) {
   const root = document.getElementById("setup");
   const name = document.getElementById("pupil-name");
   const rounds = document.getElementById("rounds");
@@ -26,7 +26,11 @@ export function initSetup(settings, { onAvatar }) {
   });
 
   // Typing must not trigger the "T" shortcut or start the game.
-  root.addEventListener("keydown", (e) => e.stopPropagation());
+  root.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter" && e.target === name) onStart();
+  });
+  document.getElementById("start").addEventListener("click", onStart);
 
   return {
     root,

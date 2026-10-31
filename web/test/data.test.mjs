@@ -13,6 +13,14 @@ test("the map has a shape for every prefecture (plus Mount Athos) and nothing el
   for (const d of Object.values(map.shapes)) assert.match(d, /^M[\d. L-]+Z/);
 });
 
+test("every prefecture has an arrow anchor inside the map", () => {
+  const [, , w, h] = map.viewBox;
+  for (const p of PREFECTURES) {
+    const [x, y] = map.anchors[p.id] ?? [];
+    assert.ok(x >= 0 && x <= w && y >= 0 && y <= h, `${p.id}: anchor ${x},${y}`);
+  }
+});
+
 test("every OSM regional unit is assigned to exactly one prefecture", () => {
   const seen = new Set();
   for (const u of PREFECTURES.flatMap((p) => p.units)) {

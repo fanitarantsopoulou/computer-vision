@@ -8,7 +8,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; color: var(--ink); }
-#stage { position: fixed; inset: 0; overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none; }
+#stage { position: fixed; inset: 0; overflow: hidden; user-select: none; -webkit-user-select: none; }
 #scene, #scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 [hidden] { display: none !important; }
 
@@ -67,10 +67,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 /* Avatar and HUD */
 #avatar { position: absolute; left: 2.5vw; bottom: 1vh; height: 36vh; aspect-ratio: 2 / 3; transform-origin: 50% 100%; }
 #avatar svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
-#avatar .wave-arm { transform-origin: 150px 150px; transform-box: view-box; animation: wave 1.6s ease-in-out infinite; }
-#avatar.cheer { animation: cheer 0.7s ease-out 2; }
-@keyframes wave { 50% { rotate: -35deg; } }
-@keyframes cheer { 40% { translate: 0 -5vh; } }
+#avatar svg { animation: sway 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+#avatar .eyes { transform-origin: 100px 85px; transform-box: view-box; animation: blink 4.5s infinite; }
+#avatar .arm-l, #avatar .arm-r { transition: rotate 0.35s ease-out; }
+#avatar .mouth { transform-origin: 100px 113px; transform-box: view-box; }
+/* poses, set by the game (play.js): pointing at the map, winning, "oops" */
+#avatar.pose-point .arm-r { rotate: -100deg; }
+#avatar.pose-win .arm-r { rotate: -165deg; }
+#avatar.pose-win .arm-l { rotate: 165deg; }
+#avatar.pose-win svg { animation: jump 0.6s ease-out 2; }
+#avatar.pose-oops .arm-r { rotate: -35deg; }
+#avatar.pose-oops .arm-l { rotate: 35deg; }
+#avatar.pose-oops .mouth { transform: scaleY(-1); }
+#avatar.pose-oops svg { animation: shrug 0.9s ease-in-out; }
+@keyframes sway { 50% { rotate: 1.8deg; } }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes jump { 40% { translate: 0 -5vh; } }
+@keyframes shrug { 25%, 75% { translate: 0 -1.6vh; scale: 1 0.97; } }
 #hud { position: absolute; left: 2.5vw; top: 3vh; padding: 0.6vh 1.6vw; border-radius: 30px; background: var(--card); font-size: clamp(20px, 4vh, 44px); font-weight: 800; }
 
 /* Idle screen */
@@ -125,3 +138,27 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #end h2 { margin: 0; font-size: clamp(36px, 10vh, 120px); color: #fff; text-shadow: 0 4px 0 #2a7bd0, 0 8px 18px rgba(0,0,0,0.25); }
 #end p { margin: 1.5vh 0 0; font-size: clamp(20px, 4.5vh, 52px); font-weight: 800; background: var(--card); padding: 1vh 2.4vw; border-radius: 40px; }
 #end #end-stars { background: none; font-size: clamp(30px, 8vh, 90px); }
+
+/* Session controls and pause screen */
+#controls { position: absolute; z-index: 6; top: 2vh; left: 50%; translate: -50% 0; display: flex; gap: 8px; padding: 6px 10px; border-radius: 30px; background: rgba(255,255,255,0.55); opacity: 0.55; transition: opacity 0.2s; }
+#controls:hover { opacity: 1; }
+#controls, #controls * { cursor: auto; }
+#controls button, #pause button, #end .btns button {
+  min-width: 44px; height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: #fff; color: var(--ink); font: inherit; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+#controls button:hover, #pause button:hover, #end .btns button:hover { background: #fff1d6; }
+#pause { position: absolute; z-index: 5; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; background: rgba(20, 50, 100, 0.45); backdrop-filter: blur(6px); }
+#pause, #pause * { cursor: auto; }
+#pause h2 { margin: 0 0 1vh; font-size: clamp(36px, 10vh, 110px); color: #fff; text-shadow: 0 4px 0 #2a7bd0; }
+#pause button { height: auto; padding: 1.2vh 3vw; font-size: clamp(20px, 4vh, 44px); border-radius: 40px; }
+#end { pointer-events: none; }
+#end .btns { display: flex; gap: 12px; margin-top: 3vh; pointer-events: auto; cursor: auto; }
+#end .btns button { height: auto; padding: 1vh 2vw; font-size: clamp(18px, 3.4vh, 38px); border-radius: 40px; }
+
+/* Arrow on the map */
+#map .arrow path { fill: #e53935; stroke: #fff; stroke-width: 6; stroke-linejoin: round; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
+#map .arrow .bob { animation: arrow-bob 0.6s ease-in-out infinite alternate; }
+@keyframes arrow-bob { to { transform: translateY(-22px); } }
+
+#setup #start { padding: 12px; border: 0; border-radius: 14px; background: #2e9a3f; color: #fff; font: inherit; font-size: 20px; font-weight: 800; box-shadow: 0 4px 0 #1f6e2c; }
+#setup #start:hover { background: #38b04b; }

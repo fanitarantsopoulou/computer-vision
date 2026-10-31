@@ -10,6 +10,20 @@
     <div id="stage">
       <div id="scene"></div>
 
+      <div id="controls" data-ui hidden>
+        <button id="c-pause" type="button" title="Παύση (Space)">⏸</button>
+        <button id="c-restart" type="button" title="Από την αρχή (R)">↻</button>
+        <button id="c-skip" type="button" title="Επόμενη ερώτηση (N)">⏭</button>
+        <button id="c-sound" type="button" title="Ήχος (M)">🔊</button>
+        <button id="c-stop" type="button" title="Τέλος (Esc)">⏹</button>
+      </div>
+      <div id="pause" data-ui hidden>
+        <h2>⏸ Παύση</h2>
+        <button id="p-resume" type="button">▶ Συνέχεια</button>
+        <button id="p-restart" type="button">↻ Από την αρχή</button>
+        <button id="p-stop" type="button">⏹ Τέλος</button>
+      </div>
+
       <div id="hud" hidden><span id="score">⭐ 0</span></div>
       <div id="clouds"></div>
 
@@ -24,7 +38,7 @@
 
       <div id="idle">
         <h1>Γνωρίζω την Ελλάδα</h1>
-        <p class="wave">👋 Πλησίασε για να παίξουμε!</p>
+        <p id="idle-hint" class="wave"></p>
         <p id="status" class="status">Φορτώνει η κάμερα…</p>
       </div>
 
@@ -32,9 +46,13 @@
         <h2 id="end-title"></h2>
         <p id="end-score"></p>
         <p id="end-stars" aria-hidden="true"></p>
+        <div class="btns" data-ui>
+          <button id="e-replay" type="button">↻ Παίξε ξανά</button>
+          <button id="e-next" type="button">Επόμενος μαθητής</button>
+        </div>
       </div>
 
-      <div id="setup">
+      <div id="setup" data-ui>
         <label class="field">Όνομα μαθητή
           <input id="pupil-name" type="text" maxlength="20" placeholder="(προαιρετικό)" autocomplete="off" />
         </label>
@@ -45,13 +63,14 @@
         <label class="field inline">Ερωτήσεις
           <input id="rounds" type="number" min="1" max="52" step="1" inputmode="numeric" />
         </label>
+        <button id="start" type="button">▶ Έναρξη</button>
       </div>
 
       <div id="cursor" hidden></div>
       <video id="cam" playsinline muted></video>
 
-      <button id="gear" title="Ρυθμίσεις δασκάλου (T)" aria-label="Ρυθμίσεις δασκάλου">⚙</button>
-      <div id="settings" hidden>
+      <button id="gear" data-ui title="Ρυθμίσεις δασκάλου (T)" aria-label="Ρυθμίσεις δασκάλου">⚙</button>
+      <div id="settings" data-ui hidden>
         <h2>Ρυθμίσεις δασκάλου</h2>
         <label class="row">Απόσταση έναρξης
           <input id="set-distance" type="range" min="0.06" max="0.3" step="0.01" />
@@ -60,6 +79,8 @@
         <label class="row">Κάμερα
           <select id="set-camera"></select>
         </label>
+        <label class="row inline"><input id="set-sound" type="checkbox" /> 🔊 Μουσική και ήχοι</label>
+        <label class="row inline"><input id="set-auto" type="checkbox" /> Αυτόματη έναρξη όταν πλησιάζει μαθητής</label>
         <label class="row inline"><input id="set-preview" type="checkbox" /> Δείξε προεπισκόπηση κάμερας</label>
         <p class="hint">Η εικόνα της κάμερας δεν εμφανίζεται ποτέ στο παιχνίδι ούτε αποθηκεύεται.</p>
         <button id="set-close">Κλείσιμο</button>

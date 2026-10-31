@@ -1,7 +1,8 @@
 import { PREFECTURES } from "./data/prefectures.js";
 import { Play } from "./game/play.js";
 import { Pointer } from "./input.js";
-import { initSettingsPanel, loadSettings } from "./settings.js";
+import { Sound } from "./audio.js";
+import { initSettingsPanel, loadSettings, saveSettings } from "./settings.js";
 import { initSetup } from "./setup.js";
 import { Tracker } from "./tracking/hand-tracker.js";
 import { avatarSvg } from "./ui/avatar.js";
@@ -20,7 +21,9 @@ const pointer = new Pointer(stage);
 
 $("scene").innerHTML = SCENE_SVG;
 const map = new GreeceMap($("map"));
+const sound = new Sound(settings.sound);
 const play = new Play({
+  sfx: sound,
   prefectures: PREFECTURES,
   map,
   els: {
@@ -38,12 +41,19 @@ const panel = initSettingsPanel(settings, {
   onChange: (s, key) => {
     if (key === "showPreview") video.classList.toggle("preview", s.showPreview);
     if (key === "cameraId") startCamera();
+    if (key === "autoStart") showIdleHint();
+    if (key === "sound") setSound(s.sound);
   },
 });
 function renderAvatar() {
   $("avatar").innerHTML = avatarSvg(settings.avatar);
 }
-const setup = initSetup(settings, { onAvatar: renderAvatar });
+const startGame = () => setState("playing", performance.now());
+const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame });
+function showIdleHint() {
+  $("idle-hint").textContent = settings.autoStart ? "👋 Πλησίασε για να παίξουμε!" : "Πάτα Έναρξη όταν είσαι έτοιμος/η!";
+}
+showIdleHint();
 renderAvatar();
 video.classList.toggle("preview", settings.showPreview);
 
@@ -62,6 +72,10 @@ function setState(next, now) {
   setup.root.hidden = !idle;
   $("avatar").hidden = idle;
   $("hud").hidden = !playing;
+  $("controls").hidden = !playing;
+  setPaused(false);
+  if (playing) sound.startMusic();
+  else sound.stopMusic();
   $("cursor").hidden = !playing;
   $("end").hidden = next !== "done";
   if (playing) {
@@ -78,13 +92,66 @@ play.onFinish = ({ score, total, name }) => {
   $("end-title").textContent = name ? `Μπράβο, ${name}!` : "Μπράβο!";
   $("end-score").textContent = `Σωστές με την πρώτη: ${score} από ${total}`;
   $("end-stars").textContent = "⭐".repeat(Math.max(1, Math.round((score / total) * 5)));
+  sound.victory();
   setState("done", performance.now());
   doneAt = performance.now();
 };
-// Clicking or tapping always starts a session: lets the teacher start it, and covers setups without a camera.
+// --- teacher controls: pause, restart, skip, stop ---
+function setPaused(on) {
+  play.paused = on && state === "playing";
+  $("pause").hidden = !play.paused;
+  $("c-pause").textContent = play.paused ? "▶" : "⏸";
+  sound.pauseMusic(play.paused);
+}
+const togglePause = () => state === "playing" && setPaused(!play.paused);
+const restart = () => {
+  if (state === "done") setState("playing", performance.now());
+  else if (state === "playing") {
+    play.restart();
+    setPaused(false);
+  }
+};
+const stopSession = () => setState("idle", performance.now());
+const click = (id, fn) =>
+  $(id).addEventListener("click", (e) => {
+    e.currentTarget.blur(); // a focused button would also react to Space
+    fn();
+  });
+click("c-pause", togglePause);
+click("p-resume", togglePause);
+click("c-restart", restart);
+click("p-restart", restart);
+click("c-skip", () => state === "playing" && play.skip());
+function setSound(on) {
+  settings.sound = on;
+  saveSettings(settings);
+  sound.setEnabled(on);
+  $("c-sound").textContent = on ? "🔊" : "🔇";
+  panel.syncSound();
+}
+click("c-sound", () => setSound(!settings.sound));
+setSound(settings.sound);
+// Browsers allow sound only after a click or key press.
+for (const type of ["pointerdown", "keydown"]) addEventListener(type, () => sound.unlock());
+click("c-stop", stopSession);
+click("p-stop", stopSession);
+click("e-replay", restart);
+click("e-next", stopSession);
+addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === " ") {
+    e.preventDefault();
+    togglePause();
+  } else if (e.key.toLowerCase() === "r") restart();
+  else if (e.key.toLowerCase() === "n" && state === "playing") play.skip();
+  else if (e.key.toLowerCase() === "m") setSound(!settings.sound);
+  else if (e.key === "Escape" && state !== "idle") stopSession();
+});
+
+// A game only starts from the Start button (or automatically when enabled), so the teacher has time to enter the pupil's details.
 stage.addEventListener("pointerdown", (e) => {
-  if (e.target.closest("#setup, #settings, #gear")) return;
-  setState(state === "idle" ? "playing" : state === "done" ? "idle" : state, performance.now());
+  if (e.target.closest("[data-ui]")) return;
+  if (state === "done") setState("idle", performance.now());
 });
 
 // --- camera and tracking ---
@@ -105,7 +172,7 @@ async function startCamera() {
     status.textContent = tracker ? "Η κάμερα είναι έτοιμη." : "Φορτώνει το σύστημα παρακολούθησης χεριών…";
   } catch (e) {
     console.warn(e);
-    status.textContent = "Δεν βρέθηκε κάμερα. Πάτα οπουδήποτε και παίξε με το ποντίκι.";
+    status.textContent = "Δεν βρέθηκε κάμερα. Πάτησε Έναρξη και παίξε με το ποντίκι.";
   }
 }
 
@@ -115,7 +182,7 @@ async function startTracker() {
     status.textContent = stream ? "Η κάμερα είναι έτοιμη." : status.textContent;
   } catch (e) {
     console.error(e);
-    status.textContent = "Δεν φορτώθηκε το σύστημα παρακολούθησης χεριών. Πάτα οπουδήποτε και παίξε με το ποντίκι.";
+    status.textContent = "Δεν φορτώθηκε το σύστημα παρακολούθησης χεριών. Πάτησε Έναρξη και παίξε με το ποντίκι.";
   }
 }
 startCamera();
@@ -134,13 +201,14 @@ function frame(now) {
   if (r) {
     pointer.updateHand(r.hand, now, w, h);
     const near = r.faceWidth > settings.enterWidth || !!r.hand;
-    if (near) lastNearAt = now;
+    if (near || play.paused) lastNearAt = now; // a paused session never times out
     if (state === "done") {
       // wait for the end screen to finish
     } else if (state === "idle") {
-      nearSince = near ? nearSince || now : 0;
+      nearSince = near && settings.autoStart ? nearSince || now : 0;
       if (nearSince && now - nearSince > ENTER_HOLD_MS) setState("playing", now);
-    } else if (now - lastNearAt > LEAVE_AFTER_MS) {
+    } else if (settings.autoStart && now - lastNearAt > LEAVE_AFTER_MS) {
+      // Only for auto-started sessions; a teacher-started one ends via the end screen or the controls.
       setState("idle", now);
     }
   } else if (state === "playing" && !tracker && pointer.get(now)) {
@@ -152,7 +220,7 @@ function frame(now) {
   if (state === "playing") {
     const p = pointer.get(now);
     play.update(dt, p);
-    cursorEl.hidden = !p;
+    cursorEl.hidden = !p || p.source === "mouse"; // the mouse keeps its normal arrow; the orange ring is for the hand
     if (p) {
       cursorEl.style.transform = `translate(${p.x}px, ${p.y}px)`;
       cursorEl.classList.toggle("pinch", p.pinching);
