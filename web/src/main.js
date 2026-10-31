@@ -1,7 +1,8 @@
 import { PREFECTURES } from "./data/prefectures.js";
 import { Play } from "./game/play.js";
 import { Pointer } from "./input.js";
-import { initSettingsPanel, loadSettings } from "./settings.js";
+import { Sound } from "./audio.js";
+import { initSettingsPanel, loadSettings, saveSettings } from "./settings.js";
 import { initSetup } from "./setup.js";
 import { Tracker } from "./tracking/hand-tracker.js";
 import { avatarSvg } from "./ui/avatar.js";
@@ -20,7 +21,9 @@ const pointer = new Pointer(stage);
 
 $("scene").innerHTML = SCENE_SVG;
 const map = new GreeceMap($("map"));
+const sound = new Sound(settings.sound);
 const play = new Play({
+  sfx: sound,
   prefectures: PREFECTURES,
   map,
   els: {
@@ -39,6 +42,7 @@ const panel = initSettingsPanel(settings, {
     if (key === "showPreview") video.classList.toggle("preview", s.showPreview);
     if (key === "cameraId") startCamera();
     if (key === "autoStart") showIdleHint();
+    if (key === "sound") setSound(s.sound);
   },
 });
 function renderAvatar() {
@@ -70,6 +74,8 @@ function setState(next, now) {
   $("hud").hidden = !playing;
   $("controls").hidden = !playing;
   setPaused(false);
+  if (playing) sound.startMusic();
+  else sound.stopMusic();
   $("cursor").hidden = !playing;
   $("end").hidden = next !== "done";
   if (playing) {
@@ -86,6 +92,7 @@ play.onFinish = ({ score, total, name }) => {
   $("end-title").textContent = name ? `Μπράβο, ${name}!` : "Μπράβο!";
   $("end-score").textContent = `Σωστές με την πρώτη: ${score} από ${total}`;
   $("end-stars").textContent = "⭐".repeat(Math.max(1, Math.round((score / total) * 5)));
+  sound.victory();
   setState("done", performance.now());
   doneAt = performance.now();
 };
@@ -94,6 +101,7 @@ function setPaused(on) {
   play.paused = on && state === "playing";
   $("pause").hidden = !play.paused;
   $("c-pause").textContent = play.paused ? "▶" : "⏸";
+  sound.pauseMusic(play.paused);
 }
 const togglePause = () => state === "playing" && setPaused(!play.paused);
 const restart = () => {
@@ -114,6 +122,17 @@ click("p-resume", togglePause);
 click("c-restart", restart);
 click("p-restart", restart);
 click("c-skip", () => state === "playing" && play.skip());
+function setSound(on) {
+  settings.sound = on;
+  saveSettings(settings);
+  sound.setEnabled(on);
+  $("c-sound").textContent = on ? "🔊" : "🔇";
+  panel.syncSound();
+}
+click("c-sound", () => setSound(!settings.sound));
+setSound(settings.sound);
+// Browsers allow sound only after a click or key press.
+for (const type of ["pointerdown", "keydown"]) addEventListener(type, () => sound.unlock());
 click("c-stop", stopSession);
 click("p-stop", stopSession);
 click("e-replay", restart);
@@ -125,6 +144,7 @@ addEventListener("keydown", (e) => {
     togglePause();
   } else if (e.key.toLowerCase() === "r") restart();
   else if (e.key.toLowerCase() === "n" && state === "playing") play.skip();
+  else if (e.key.toLowerCase() === "m") setSound(!settings.sound);
   else if (e.key === "Escape" && state !== "idle") stopSession();
 });
 

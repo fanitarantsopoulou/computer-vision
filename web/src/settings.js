@@ -1,5 +1,5 @@
 const KEY = "gesture-vision-settings";
-const DEFAULTS = { avatar: "girl", rounds: 10, autoStart: false, enterWidth: 0.14, showPreview: false, cameraId: "" };
+const DEFAULTS = { avatar: "girl", rounds: 10, autoStart: false, sound: true, enterWidth: 0.14, showPreview: false, cameraId: "" };
 
 export function loadSettings() {
   try {
@@ -39,6 +39,10 @@ export function initSettingsPanel(settings, { onChange }) {
   dist.value = settings.enterWidth;
   dist.addEventListener("input", () => set("enterWidth", Number(dist.value)));
 
+  const sound = document.getElementById("set-sound");
+  sound.checked = settings.sound;
+  sound.addEventListener("change", () => set("sound", sound.checked));
+
   const auto = document.getElementById("set-auto");
   auto.checked = settings.autoStart;
   auto.addEventListener("change", () => set("autoStart", auto.checked));
@@ -51,6 +55,8 @@ export function initSettingsPanel(settings, { onChange }) {
   cam.addEventListener("change", () => set("cameraId", cam.value));
 
   return {
+    /** Keeps the checkbox in step when sound is toggled from elsewhere (the in-game button). */
+    syncSound: () => (sound.checked = settings.sound),
     /** Lists cameras; labels are only available after the user granted camera access. */
     async refreshCameras() {
       const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");

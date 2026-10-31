@@ -17,7 +17,8 @@ const cloudSvg = `<svg viewBox="0 0 220 130" preserveAspectRatio="none" aria-hid
 
 /** The falling-clouds quiz: DOM clouds, hit-testing, dwell/pinch selection and feedback. */
 export class Play {
-  constructor({ prefectures, map, els }) {
+  constructor({ prefectures, map, els, sfx }) {
+    this.sfx = sfx; // {win(), wrong()}
     this.deck = new Deck(prefectures, { choices: CLOUDS });
     this.map = map;
     this.els = els; // {clouds, prompt, prefecture, bubble, avatar, caption, score}
@@ -223,6 +224,7 @@ export class Play {
       if (this.attempts === 0) this.score += 1;
       this.showScore();
       this.say(`${CHEERS[this.asked % CHEERS.length]} ${cloud.label}`, true);
+      this.sfx?.win();
       this.pose("win");
       this.poseTimer = setTimeout(() => this.pose("point"), 1300); // then show the pupil where it is
     } else {
@@ -232,6 +234,7 @@ export class Play {
       cloud.el.classList.add("wrong");
       setTimeout(() => this.round && this.respawn(cloud), 700);
       this.say(WRONG_MESSAGES[Math.floor(Math.random() * WRONG_MESSAGES.length)], false);
+      this.sfx?.wrong();
       this.pose("oops");
       this.poseTimer = setTimeout(() => this.pose(null), 1200);
     }
