@@ -62,6 +62,8 @@ function setState(next, now) {
   setup.root.hidden = !idle;
   $("avatar").hidden = idle;
   $("hud").hidden = !playing;
+  $("controls").hidden = !playing;
+  setPaused(false);
   $("cursor").hidden = !playing;
   $("end").hidden = next !== "done";
   if (playing) {
@@ -81,9 +83,48 @@ play.onFinish = ({ score, total, name }) => {
   setState("done", performance.now());
   doneAt = performance.now();
 };
+// --- teacher controls: pause, restart, skip, stop ---
+function setPaused(on) {
+  play.paused = on && state === "playing";
+  $("pause").hidden = !play.paused;
+  $("c-pause").textContent = play.paused ? "▶" : "⏸";
+}
+const togglePause = () => state === "playing" && setPaused(!play.paused);
+const restart = () => {
+  if (state === "done") setState("playing", performance.now());
+  else if (state === "playing") {
+    play.restart();
+    setPaused(false);
+  }
+};
+const stopSession = () => setState("idle", performance.now());
+const click = (id, fn) =>
+  $(id).addEventListener("click", (e) => {
+    e.currentTarget.blur(); // a focused button would also react to Space
+    fn();
+  });
+click("c-pause", togglePause);
+click("p-resume", togglePause);
+click("c-restart", restart);
+click("p-restart", restart);
+click("c-skip", () => state === "playing" && play.skip());
+click("c-stop", stopSession);
+click("p-stop", stopSession);
+click("e-replay", restart);
+click("e-next", stopSession);
+addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === " ") {
+    e.preventDefault();
+    togglePause();
+  } else if (e.key.toLowerCase() === "r") restart();
+  else if (e.key.toLowerCase() === "n" && state === "playing") play.skip();
+  else if (e.key === "Escape" && state !== "idle") stopSession();
+});
+
 // Clicking or tapping always starts a session: lets the teacher start it, and covers setups without a camera.
 stage.addEventListener("pointerdown", (e) => {
-  if (e.target.closest("#setup, #settings, #gear")) return;
+  if (e.target.closest("[data-ui]")) return;
   setState(state === "idle" ? "playing" : state === "done" ? "idle" : state, performance.now());
 });
 
@@ -134,7 +175,7 @@ function frame(now) {
   if (r) {
     pointer.updateHand(r.hand, now, w, h);
     const near = r.faceWidth > settings.enterWidth || !!r.hand;
-    if (near) lastNearAt = now;
+    if (near || play.paused) lastNearAt = now; // a paused session never times out
     if (state === "done") {
       // wait for the end screen to finish
     } else if (state === "idle") {

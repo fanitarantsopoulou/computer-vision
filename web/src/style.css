@@ -125,3 +125,24 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #end h2 { margin: 0; font-size: clamp(36px, 10vh, 120px); color: #fff; text-shadow: 0 4px 0 #2a7bd0, 0 8px 18px rgba(0,0,0,0.25); }
 #end p { margin: 1.5vh 0 0; font-size: clamp(20px, 4.5vh, 52px); font-weight: 800; background: var(--card); padding: 1vh 2.4vw; border-radius: 40px; }
 #end #end-stars { background: none; font-size: clamp(30px, 8vh, 90px); }
+
+/* Session controls and pause screen */
+#controls { position: absolute; z-index: 6; top: 2vh; left: 50%; translate: -50% 0; display: flex; gap: 8px; padding: 6px 10px; border-radius: 30px; background: rgba(255,255,255,0.55); opacity: 0.55; transition: opacity 0.2s; }
+#controls:hover { opacity: 1; }
+#controls, #controls * { cursor: auto; }
+#controls button, #pause button, #end .btns button {
+  min-width: 44px; height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: #fff; color: var(--ink); font: inherit; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+#controls button:hover, #pause button:hover, #end .btns button:hover { background: #fff1d6; }
+#pause { position: absolute; z-index: 5; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; background: rgba(20, 50, 100, 0.45); backdrop-filter: blur(6px); }
+#pause, #pause * { cursor: auto; }
+#pause h2 { margin: 0 0 1vh; font-size: clamp(36px, 10vh, 110px); color: #fff; text-shadow: 0 4px 0 #2a7bd0; }
+#pause button { height: auto; padding: 1.2vh 3vw; font-size: clamp(20px, 4vh, 44px); border-radius: 40px; }
+#end { pointer-events: none; }
+#end .btns { display: flex; gap: 12px; margin-top: 3vh; pointer-events: auto; cursor: auto; }
+#end .btns button { height: auto; padding: 1vh 2vw; font-size: clamp(18px, 3.4vh, 38px); border-radius: 40px; }
+
+/* Arrow on the map */
+#map .arrow path { fill: #e53935; stroke: #fff; stroke-width: 6; stroke-linejoin: round; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
+#map .arrow .bob { animation: arrow-bob 0.6s ease-in-out infinite alternate; }
+@keyframes arrow-bob { to { transform: translateY(-22px); } }

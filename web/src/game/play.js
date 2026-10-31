@@ -1,7 +1,7 @@
 import { Deck } from "./deck.js";
 
 const DWELL_S = 0.6; // hold an open hand over a cloud this long to pick it
-const NEXT_ROUND_S = 2.4;
+const NEXT_ROUND_S = 3.5; // long enough to see the arrow on the map
 const CLOUDS = 6; // one right answer and five wrong ones
 const LANES = 4;
 const SPEED = 0.1; // fall speed, in screen heights per second
@@ -28,6 +28,8 @@ export class Play {
     this.pupil = "";
     this.onFinish = () => {};
     this.locked = false;
+    this.paused = false;
+    this.rounds = 0;
     this.nextIn = 0;
     this.bubbleIn = 0;
     this.time = 0;
@@ -40,9 +42,24 @@ export class Play {
     this.score = 0;
     this.asked = 0;
     this.total = rounds;
+    this.rounds = rounds;
+    this.paused = false;
     this.pupil = name;
     this.newRound();
     if (name) this.say(`Γεια σου, ${name}!`, true, 2.5);
+  }
+
+  /** Same pupil, same number of questions, from the first one. */
+  restart() {
+    this.stop();
+    this.start({ rounds: this.rounds, name: this.pupil });
+  }
+
+  /** Moves on to the next question without counting this one as right. */
+  skip() {
+    if (!this.round) return;
+    if (this.asked >= this.total) this.finish();
+    else this.newRound();
   }
 
   stop() {
@@ -121,6 +138,7 @@ export class Play {
 
   /** pointer: {x, y, pinching} or null. dt in seconds. */
   update(dt, pointer) {
+    if (this.paused) return;
     this.time += dt;
     if (this.bubbleIn > 0 && (this.bubbleIn -= dt) <= 0) this.hideBubble();
     if (this.locked) {
@@ -183,6 +201,7 @@ export class Play {
       cloud.el.classList.add("right");
       for (const c of this.clouds) if (c !== cloud) c.el.classList.add("fade");
       this.map.light([this.round.prefecture.id]);
+      this.map.point(this.round.prefecture.id);
       this.els.caption.textContent = `Νομός ${this.round.prefecture.name}`;
       if (this.attempts === 0) this.score += 1;
       this.showScore();

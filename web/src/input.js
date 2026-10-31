@@ -12,13 +12,14 @@ export class Pointer {
     this.pinch = new PinchDetector();
     this.hand = null; // last hand-derived state
     this.handSeenAt = -Infinity;
-    this.mouse = { x: 0, y: 0, down: false, active: false };
+    this.mouse = { x: 0, y: 0, down: false, active: false, overUi: false };
     this.cursor = null;
 
     target.addEventListener("pointermove", (e) => {
       this.mouse.x = e.clientX;
       this.mouse.y = e.clientY;
       this.mouse.active = true;
+      this.mouse.overUi = !!e.target.closest("[data-ui]"); // buttons and panels are not part of the game
     });
     target.addEventListener("pointerdown", () => (this.mouse.down = true));
     addEventListener("pointerup", () => (this.mouse.down = false));
@@ -49,7 +50,7 @@ export class Pointer {
   /** Current pointer: the hand when it was seen recently, otherwise the mouse (for testing and no-camera setups). */
   get(nowMs) {
     if (this.hand && nowMs - this.handSeenAt < 300) return { ...this.hand, source: "hand" };
-    if (this.mouse.active) return { x: this.mouse.x, y: this.mouse.y, pinching: this.mouse.down, source: "mouse" };
+    if (this.mouse.active && !this.mouse.overUi) return { x: this.mouse.x, y: this.mouse.y, pinching: this.mouse.down, source: "mouse" };
     return null;
   }
 }

@@ -172,10 +172,67 @@ const toPath = (mp) =>
     .map((r) => "M" + r.map(([lon, lat]) => `${fx((lon - minX) * k * scale)} ${fx((maxY - lat) * scale)}`).join("L") + "Z")
     .join("");
 
+// Where the pointing arrow lands: the point deepest inside the largest piece of each prefecture
+// (so Cyclades/Dodecanese point at their biggest island rather than into the sea).
+const project = ([lon, lat]) => [(lon - minX) * k * scale, (maxY - lat) * scale];
+const area = (ring) => Math.abs(ring.reduce((a, [x, y], i) => a + x * ring[(i + 1) % ring.length][1] - ring[(i + 1) % ring.length][0] * y, 0)) / 2;
+function inside(poly, x, y) {
+  let c = false;
+  for (const ring of poly) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+    }
+  }
+  return c;
+}
+function edgeDist(poly, x, y) {
+  let best = Infinity;
+  for (const ring of poly) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [ax, ay] = ring[j];
+      const [bx, by] = ring[i];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+      best = Math.min(best, Math.hypot(x - ax - t * dx, y - ay - t * dy));
+    }
+  }
+  return best;
+}
+function anchorOf(mp) {
+  const polys = mp.map((poly) => poly.map((ring) => ring.map(project)));
+  const poly = polys.reduce((a, b) => (area(b[0]) > area(a[0]) ? b : a));
+  const xs = poly[0].map((p) => p[0]);
+  const ys = poly[0].map((p) => p[1]);
+  let [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  let best = [(x0 + x1) / 2, (y0 + y1) / 2];
+  let bestD = -1;
+  for (let pass = 0; pass < 3; pass++) {
+    const N = 24;
+    const [cx0, cx1, cy0, cy1] = [x0, x1, y0, y1];
+    for (let i = 0; i <= N; i++) {
+      for (let j = 0; j <= N; j++) {
+        const x = cx0 + ((cx1 - cx0) * i) / N;
+        const y = cy0 + ((cy1 - cy0) * j) / N;
+        if (!inside(poly, x, y)) continue;
+        const d = edgeDist(poly, x, y);
+        if (d > bestD) [bestD, best] = [d, [x, y]];
+      }
+    }
+    const w = (cx1 - cx0) / 6;
+    const h = (cy1 - cy0) / 6;
+    [x0, x1, y0, y1] = [best[0] - w, best[0] + w, best[1] - h, best[1] + h];
+  }
+  return best.map(fx);
+}
+
 const out = {
   viewBox: [0, 0, WIDTH, height],
   attribution: "Borders © OpenStreetMap contributors (ODbL); coastline © GADM",
   shapes: Object.fromEntries(shapes.map((s) => [s.id, toPath(s.mp)])),
+  anchors: Object.fromEntries(shapes.filter((s) => s.id !== "athos").map((s) => [s.id, anchorOf(s.mp)])),
 };
 
 const empty = shapes.filter((s) => !s.mp.length).map((s) => s.id);
