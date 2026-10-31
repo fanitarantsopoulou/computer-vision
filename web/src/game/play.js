@@ -64,6 +64,7 @@ export class Play {
   }
 
   stop() {
+    this.pose(null);
     this.clouds.forEach((c) => c.el.remove());
     this.clouds = [];
     this.round = null;
@@ -101,6 +102,7 @@ export class Play {
   }
 
   newRound() {
+    this.pose(null);
     this.round = this.deck.next();
     this.asked += 1;
     this.attempts = 0;
@@ -207,9 +209,8 @@ export class Play {
       if (this.attempts === 0) this.score += 1;
       this.showScore();
       this.say(`${CHEERS[this.asked % CHEERS.length]} ${cloud.label}`, true);
-      this.els.avatar.classList.remove("cheer");
-      void this.els.avatar.offsetWidth; // restart the animation
-      this.els.avatar.classList.add("cheer");
+      this.pose("win");
+      this.poseTimer = setTimeout(() => this.pose("point"), 1300); // then show the pupil where it is
     } else {
       this.attempts += 1;
       cloud.state = "wrong";
@@ -217,6 +218,19 @@ export class Play {
       cloud.el.classList.add("wrong");
       setTimeout(() => this.round && this.respawn(cloud), 700);
       this.say(WRONG_MESSAGES[Math.floor(Math.random() * WRONG_MESSAGES.length)], false);
+      this.pose("oops");
+      this.poseTimer = setTimeout(() => this.pose(null), 1200);
+    }
+  }
+
+  /** Sets the avatar's pose: "win", "point", "oops" or null for the idle sway. */
+  pose(name) {
+    clearTimeout(this.poseTimer);
+    const a = this.els.avatar;
+    a.classList.remove("pose-win", "pose-point", "pose-oops");
+    if (name) {
+      void a.offsetWidth; // restart the animation if the same pose is set again
+      a.classList.add(`pose-${name}`);
     }
   }
 

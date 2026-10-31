@@ -67,10 +67,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 /* Avatar and HUD */
 #avatar { position: absolute; left: 2.5vw; bottom: 1vh; height: 36vh; aspect-ratio: 2 / 3; transform-origin: 50% 100%; }
 #avatar svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
-#avatar .wave-arm { transform-origin: 150px 150px; transform-box: view-box; animation: wave 1.6s ease-in-out infinite; }
-#avatar.cheer { animation: cheer 0.7s ease-out 2; }
-@keyframes wave { 50% { rotate: -35deg; } }
-@keyframes cheer { 40% { translate: 0 -5vh; } }
+#avatar svg { animation: sway 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+#avatar .eyes { transform-origin: 100px 85px; transform-box: view-box; animation: blink 4.5s infinite; }
+#avatar .arm-l, #avatar .arm-r { transition: rotate 0.35s ease-out; }
+#avatar .mouth { transform-origin: 100px 113px; transform-box: view-box; }
+/* poses, set by the game (play.js): pointing at the map, winning, "oops" */
+#avatar.pose-point .arm-r { rotate: -100deg; }
+#avatar.pose-win .arm-r { rotate: -165deg; }
+#avatar.pose-win .arm-l { rotate: 165deg; }
+#avatar.pose-win svg { animation: jump 0.6s ease-out 2; }
+#avatar.pose-oops .arm-r { rotate: -35deg; }
+#avatar.pose-oops .arm-l { rotate: 35deg; }
+#avatar.pose-oops .mouth { transform: scaleY(-1); }
+#avatar.pose-oops svg { animation: shrug 0.9s ease-in-out; }
+@keyframes sway { 50% { rotate: 1.8deg; } }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes jump { 40% { translate: 0 -5vh; } }
+@keyframes shrug { 25%, 75% { translate: 0 -1.6vh; scale: 1 0.97; } }
 #hud { position: absolute; left: 2.5vw; top: 3vh; padding: 0.6vh 1.6vw; border-radius: 30px; background: var(--card); font-size: clamp(20px, 4vh, 44px); font-weight: 800; }
 
 /* Idle screen */
