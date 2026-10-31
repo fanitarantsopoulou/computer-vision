@@ -133,6 +133,11 @@ click("c-sound", () => setSound(!settings.sound));
 setSound(settings.sound);
 // Browsers allow sound only after a click or key press.
 for (const type of ["pointerdown", "keydown"]) addEventListener(type, () => sound.unlock());
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.(); // inside a blog iframe this needs allow="fullscreen"
+}
+click("full", toggleFullscreen);
 click("c-stop", stopSession);
 click("p-stop", stopSession);
 click("e-replay", restart);
@@ -144,6 +149,7 @@ addEventListener("keydown", (e) => {
     togglePause();
   } else if (e.key.toLowerCase() === "r") restart();
   else if (e.key.toLowerCase() === "n" && state === "playing") play.skip();
+  else if (e.key.toLowerCase() === "f") toggleFullscreen();
   else if (e.key.toLowerCase() === "m") setSound(!settings.sound);
   else if (e.key === "Escape" && state !== "idle") stopSession();
 });
