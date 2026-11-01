@@ -49,11 +49,12 @@ function renderAvatar() {
   $("avatar").innerHTML = avatarSvg(settings.avatar);
 }
 const startGame = () => setState("playing", performance.now());
-const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame });
+const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame, onSpeed: () => (play.speed = settings.speed) });
 function showIdleHint() {
   $("idle-hint").textContent = settings.autoStart ? "👋 Πλησίασε για να παίξουμε!" : "Πάτα Έναρξη όταν είσαι έτοιμος/η!";
 }
 showIdleHint();
+play.speed = settings.speed;
 renderAvatar();
 video.classList.toggle("preview", settings.showPreview);
 

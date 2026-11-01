@@ -6,7 +6,7 @@ const CLOUDS = 6; // one right answer and five wrong ones
 const SIZE_LANES = 3; // clouds are sized as if the band held this many side by side
 const SLOT_WEIGHTS = [0.6, 0.9, 1.3, 1.5, 1.4]; // where a cloud can fall across the band; the middle and the map side are likelier
 const SPACING = 1.5; // vertical gap between consecutive clouds, in cloud heights
-const SPEED = 0.15; // fall speed, in screen heights per second
+const SPEED = 0.11; // fall speed at the default setting, in screen heights per second (the teacher scales it)
 const WRONG_COOLDOWN_S = 1.4;
 const WRONG_MESSAGES = ["Προσπάθησε ξανά!", "Σχεδόν! Δοκίμασε ξανά.", "Ωχ! Ξαναπροσπάθησε!"];
 const CHEERS = ["Μπράβο!", "Σωστά!", "Εξαιρετικά!", "Τα κατάφερες!"];
@@ -33,6 +33,7 @@ export class Play {
     this.locked = false;
     this.paused = false;
     this.rounds = 0;
+    this.speed = 1; // multiplier set from the teacher's speed slider
     this.nextIn = 0;
     this.bubbleIn = 0;
     this.time = 0;
@@ -171,7 +172,7 @@ export class Play {
   }
 
   place(dt, pointer) {
-    const speed = this.size.h * SPEED;
+    const speed = this.size.h * SPEED * this.speed;
     const slotW = this.playWidth / SLOT_WEIGHTS.length;
     let hovered = null;
     let best = Infinity;

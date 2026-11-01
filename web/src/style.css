@@ -132,6 +132,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #setup .field.inline { flex-direction: row; align-items: center; justify-content: space-between; }
 #setup input { font: inherit; padding: 6px 10px; border: 2px solid #b9cbe8; border-radius: 10px; color: var(--ink); background: #fff; }
 #setup input[type="number"] { width: 5em; text-align: center; }
+#setup input[type="range"] { width: 9em; padding: 0; border: 0; background: none; }
 #setup .seg { display: flex; gap: 8px; }
 #setup .seg button { flex: 1; padding: 10px 6px; border: 3px solid #b9cbe8; border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-weight: 700; }
 #setup .seg button.on { border-color: var(--lit); background: #fff1d6; }
