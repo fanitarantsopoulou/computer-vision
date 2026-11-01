@@ -68,6 +68,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 #avatar { position: absolute; left: 2.5vw; bottom: 1vh; height: 36vh; aspect-ratio: 2 / 3; transform-origin: 50% 100%; }
 #avatar svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
 #avatar svg { animation: sway 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+/* live: the avatar copies the pupil's body (body.js sets its transform and arm angles) */
+#avatar.live { left: 0; top: 0; bottom: auto; width: 200px; height: 300px; aspect-ratio: auto; transform-origin: 0 0; pointer-events: none; }
+#avatar.live svg { animation: none; }
+#avatar.live .arm-l, #avatar.live .arm-r { transition: none; }
 #avatar .eyes { transform-origin: 100px 85px; transform-box: view-box; animation: blink 4.5s infinite; }
 #avatar .arm-l, #avatar .arm-r { transition: rotate 0.35s ease-out; }
 #avatar .mouth { transform-origin: 100px 113px; transform-box: view-box; }
@@ -95,11 +99,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 @keyframes bob { 50% { translate: 0 -12px; } }
 
 /* Cursor and camera */
-#cursor {
+.cursor {
   position: absolute; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
   border: 5px solid var(--lit); background: rgba(255, 255, 255, 0.35); box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: scale 0.1s, background 0.1s;
 }
-#cursor.pinch { scale: 0.6; background: var(--lit); }
+.cursor.pinch { scale: 0.6; background: var(--lit); }
 #cam { position: fixed; right: 12px; bottom: 56px; width: 240px; border-radius: 12px; transform: scaleX(-1); opacity: 0; pointer-events: none; z-index: 5; }
 #cam.preview { opacity: 1; }
 

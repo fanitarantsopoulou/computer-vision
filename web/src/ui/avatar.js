@@ -2,6 +2,9 @@
 // separate groups so CSS can pose them (see #avatar.pose-* in style.css).
 const SKIN = "#ffd3a8";
 
+// Distance between the two shoulder pivots, for sizing the avatar to the pupil (see body.js).
+export const SHOULDER_UNITS = { boy: 100, girl: 76 };
+
 // Arm pivots (shoulders) in viewBox units, left and right as seen by the viewer.
 const pivot = (x) => `style="transform-origin:${x}px 150px;transform-box:view-box"`;
 
