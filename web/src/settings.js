@@ -1,5 +1,5 @@
 const KEY = "gesture-vision-settings";
-const DEFAULTS = { avatar: "girl", rounds: 10, autoStart: false, sound: true, enterWidth: 0.14, showPreview: false, cameraId: "" };
+const DEFAULTS = { avatar: "girl", rounds: 10, speed: 1, autoStart: false, sound: true, enterWidth: 0.14, showPreview: false, cameraId: "" };
 
 export function loadSettings() {
   try {

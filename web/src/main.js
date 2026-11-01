@@ -49,11 +49,12 @@ function renderAvatar() {
   $("avatar").innerHTML = avatarSvg(settings.avatar);
 }
 const startGame = () => setState("playing", performance.now());
-const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame });
+const setup = initSetup(settings, { onAvatar: renderAvatar, onStart: startGame, onSpeed: () => (play.speed = settings.speed) });
 function showIdleHint() {
   $("idle-hint").textContent = settings.autoStart ? "👋 Πλησίασε για να παίξουμε!" : "Πάτα Έναρξη όταν είσαι έτοιμος/η!";
 }
 showIdleHint();
+play.speed = settings.speed;
 renderAvatar();
 video.classList.toggle("preview", settings.showPreview);
 
@@ -129,6 +130,14 @@ function setSound(on) {
   $("c-sound").textContent = on ? "🔊" : "🔇";
   panel.syncSound();
 }
+function nudgeSpeed(step) {
+  settings.speed = Math.min(1.6, Math.max(0.5, Math.round((settings.speed + step) * 10) / 10));
+  saveSettings(settings);
+  play.speed = settings.speed;
+  $("speed").value = settings.speed; // keep the start-screen slider in step
+}
+click("c-slower", () => nudgeSpeed(-0.1));
+click("c-faster", () => nudgeSpeed(0.1));
 click("c-sound", () => setSound(!settings.sound));
 setSound(settings.sound);
 // Browsers allow sound only after a click or key press.
@@ -150,6 +159,8 @@ addEventListener("keydown", (e) => {
   } else if (e.key.toLowerCase() === "r") restart();
   else if (e.key.toLowerCase() === "n" && state === "playing") play.skip();
   else if (e.key.toLowerCase() === "f") toggleFullscreen();
+  else if (e.key === "-") nudgeSpeed(-0.1);
+  else if (e.key === "+" || e.key === "=") nudgeSpeed(0.1);
   else if (e.key.toLowerCase() === "m") setSound(!settings.sound);
   else if (e.key === "Escape" && state !== "idle") stopSession();
 });
