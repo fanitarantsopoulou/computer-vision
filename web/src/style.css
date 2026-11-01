@@ -65,16 +65,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #a9e0ff; col
 @keyframes rise { from { opacity: 0; translate: -50% 20px; } }
 
 /* Avatar and HUD */
-#avatar { position: absolute; left: 2.5vw; bottom: 1vh; height: 36vh; aspect-ratio: 2 / 3; transform-origin: 50% 100%; }
+#avatar { position: absolute; left: 2.5vw; bottom: 1vh; height: 36vh; aspect-ratio: 200 / 340; transform-origin: 50% 100%; }
 #avatar svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
 #avatar svg { animation: sway 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
 /* live: the avatar copies the pupil's body (body.js sets its transform and arm angles) */
-#avatar.live { left: 0; top: 0; bottom: auto; width: 200px; height: 300px; aspect-ratio: auto; transform-origin: 0 0; pointer-events: none; }
+#avatar.live { left: 0; top: 0; bottom: auto; width: 200px; height: 340px; aspect-ratio: auto; transform-origin: 0 0; pointer-events: none; }
 #avatar.live svg { animation: none; }
 #avatar.live .arm-l, #avatar.live .arm-r { transition: none; }
 #avatar .eyes { transform-origin: 100px 85px; transform-box: view-box; animation: blink 4.5s infinite; }
 #avatar .arm-l, #avatar .arm-r { transition: rotate 0.35s ease-out; }
-#avatar .mouth { transform-origin: 100px 113px; transform-box: view-box; }
+#avatar .mouth { transform-origin: 100px 107px; transform-box: view-box; }
 /* poses, set by the game (play.js): pointing at the map, winning, "oops" */
 #avatar.pose-point .arm-r { rotate: -100deg; }
 #avatar.pose-win .arm-r { rotate: -165deg; }

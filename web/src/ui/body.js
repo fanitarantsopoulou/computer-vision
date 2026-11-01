@@ -9,7 +9,7 @@ const FOLLOW = 14; // smoothing speed, per second
 const REST = 4; // degrees the arms hang out when the wrist is not seen
 const MIN_HEIGHT = 0.22; // avatar height limits, as a fraction of the screen height
 const MAX_HEIGHT = 1.1;
-const SVG_H = 300;
+const SVG_H = 340;
 const NECK = [100, 150]; // the point between the shoulders in the avatar's drawing
 
 const deg = (r) => (r * 180) / Math.PI;
