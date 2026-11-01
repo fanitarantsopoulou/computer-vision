@@ -6,6 +6,7 @@ import { initSettingsPanel, loadSettings, saveSettings } from "./settings.js";
 import { initSetup } from "./setup.js";
 import { Tracker } from "./tracking/hand-tracker.js";
 import { avatarSvg } from "./ui/avatar.js";
+import { BodyAvatar } from "./ui/body.js";
 import { GreeceMap } from "./ui/map.js";
 import { SCENE_SVG } from "./ui/scene.js";
 
@@ -45,7 +46,9 @@ const panel = initSettingsPanel(settings, {
     if (key === "sound") setSound(s.sound);
   },
 });
+const body = new BodyAvatar($("avatar"));
 function renderAvatar() {
+  body.kind = settings.avatar;
   $("avatar").innerHTML = avatarSvg(settings.avatar);
 }
 const startGame = () => setState("playing", performance.now());
@@ -77,7 +80,7 @@ function setState(next, now) {
   setPaused(false);
   if (playing) sound.startMusic();
   else sound.stopMusic();
-  $("cursor").hidden = !playing;
+  if (!playing) cursors.forEach((c) => (c.hidden = true));
   $("end").hidden = next !== "done";
   if (playing) {
     lastNearAt = now;
@@ -206,7 +209,11 @@ startCamera();
 startTracker();
 
 // --- main loop ---
-const cursorEl = $("cursor");
+const cursors = [$("cursor")]; // one ring per hand
+cursors.push(cursors[0].cloneNode());
+cursors[1].removeAttribute("id"); // ids are unique; the ring styles use the class
+cursors[0].after(cursors[1]);
+let lastBody = null;
 let prev = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
@@ -216,8 +223,9 @@ function frame(now) {
 
   const r = tracker?.process(video, now);
   if (r) {
-    pointer.updateHand(r.hand, now, w, h);
-    const near = r.faceWidth > settings.enterWidth || !!r.hand;
+    lastBody = r.body;
+    pointer.updateHands(r.hands, now, w, h);
+    const near = r.faceWidth > settings.enterWidth || r.hands.length > 0;
     if (near || play.paused) lastNearAt = now; // a paused session never times out
     if (state === "done") {
       // wait for the end screen to finish
@@ -228,20 +236,27 @@ function frame(now) {
       // Only for auto-started sessions; a teacher-started one ends via the end screen or the controls.
       setState("idle", now);
     }
-  } else if (state === "playing" && !tracker && pointer.get(now)) {
+  } else if (state === "playing" && !tracker && pointer.getAll(now).length) {
     lastNearAt = now; // no camera: the mouse keeps the session alive
   }
 
   if (state === "done" && now - doneAt > END_SCREEN_MS) setState("idle", now);
 
+  // The cartoon kid copies the pupil's body when it is seen; otherwise it waits in the corner (not on the idle screen).
+  const live = body.update(tracker ? lastBody : null, now, dt, w, h, video.videoWidth, video.videoHeight);
+  $("avatar").hidden = state === "idle" && !live;
+
   if (state === "playing") {
-    const p = pointer.get(now);
-    play.update(dt, p);
-    cursorEl.hidden = !p || p.source === "mouse"; // the mouse keeps its normal arrow; the orange ring is for the hand
-    if (p) {
-      cursorEl.style.transform = `translate(${p.x}px, ${p.y}px)`;
-      cursorEl.classList.toggle("pinch", p.pinching);
-    }
+    const ps = pointer.getAll(now);
+    play.update(dt, ps);
+    cursors.forEach((c, i) => {
+      const p = ps[i];
+      c.hidden = !p || p.source === "mouse"; // the mouse keeps its normal arrow; the orange rings are for the hands
+      if (p) {
+        c.style.transform = `translate(${p.x}px, ${p.y}px)`;
+        c.classList.toggle("pinch", p.pinching);
+      }
+    });
   }
 }
 addEventListener("resize", () => play.resize(innerWidth, innerHeight));

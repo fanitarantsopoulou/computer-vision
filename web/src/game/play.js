@@ -37,7 +37,7 @@ export class Play {
     this.nextIn = 0;
     this.bubbleIn = 0;
     this.time = 0;
-    this.wasPinching = false;
+    this.wasPinching = new Set(); // ids of the pointers that were pinching last frame
     this.size = { w: innerWidth, h: innerHeight };
   }
 
@@ -155,8 +155,8 @@ export class Play {
     c.el.classList.remove("wrong");
   }
 
-  /** pointer: {x, y, pinching} or null. dt in seconds. */
-  update(dt, pointer) {
+  /** pointers: [{id, x, y, pinching}] (any number, e.g. both hands). dt in seconds. */
+  update(dt, pointers) {
     if (this.paused) return;
     this.time += dt;
     if (this.bubbleIn > 0 && (this.bubbleIn -= dt) <= 0) this.hideBubble();
@@ -165,17 +165,16 @@ export class Play {
         if (this.asked >= this.total) this.finish();
         else this.newRound();
       }
-      this.place(dt, null);
+      this.place(dt, []);
       return;
     }
-    this.place(dt, pointer);
+    this.place(dt, pointers);
   }
 
-  place(dt, pointer) {
+  place(dt, pointers) {
     const speed = this.size.h * SPEED * this.speed;
     const slotW = this.playWidth / SLOT_WEIGHTS.length;
-    let hovered = null;
-    let best = Infinity;
+    const hits = pointers.map(() => ({ cloud: null, best: Infinity })); // the cloud under each pointer
 
     for (const c of this.clouds) {
       if (c.state === "fall" || c.state === "wrong") {
@@ -187,26 +186,28 @@ export class Play {
       c.x = cx;
       c.el.style.transform = `translate(${cx - c.w / 2}px, ${c.y}px)`;
 
-      if (pointer && c.state === "fall" && c.cooldown <= 0 && c.y > -c.h * 0.3) {
-        const dx = (pointer.x - cx) / (c.w * 0.62);
-        const dy = (pointer.y - (c.y + c.h / 2)) / (c.h * 0.7);
-        const d = dx * dx + dy * dy;
-        if (d <= 1 && d < best) {
-          best = d;
-          hovered = c;
-        }
+      if (c.state === "fall" && c.cooldown <= 0 && c.y > -c.h * 0.3) {
+        pointers.forEach((pointer, k) => {
+          const dx = (pointer.x - cx) / (c.w * 0.62);
+          const dy = (pointer.y - (c.y + c.h / 2)) / (c.h * 0.7);
+          const d = dx * dx + dy * dy;
+          if (d <= 1 && d < hits[k].best) hits[k] = { cloud: c, best: d };
+        });
       }
     }
 
-    const pinchStart = !!pointer?.pinching && !this.wasPinching;
-    this.wasPinching = !!pointer?.pinching;
+    const pinching = new Set(pointers.filter((p) => p.pinching).map((p) => p.id));
+    let chosen = null;
     for (const c of this.clouds) {
-      const on = c === hovered;
-      c.el.classList.toggle("hover", on);
-      c.dwell = on && !pointer.pinching ? c.dwell + dt : Math.max(0, c.dwell - dt * 2);
+      const over = pointers.filter((_, k) => hits[k].cloud === c);
+      c.el.classList.toggle("hover", over.length > 0);
+      c.dwell = over.some((p) => !p.pinching) ? c.dwell + dt : Math.max(0, c.dwell - dt * 2);
       c.el.style.setProperty("--dwell", Math.min(1, c.dwell / DWELL_S));
+      const pinchStart = over.some((p) => p.pinching && !this.wasPinching.has(p.id));
+      if (!chosen && over.length && (pinchStart || c.dwell >= DWELL_S)) chosen = c;
     }
-    if (hovered && (pinchStart || hovered.dwell >= DWELL_S)) this.choose(hovered);
+    this.wasPinching = pinching;
+    if (chosen) this.choose(chosen);
   }
 
   choose(cloud) {
