@@ -183,7 +183,7 @@ async function startCamera() {
   stream?.getTracks().forEach((t) => t.stop());
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: settings.cameraId ? { exact: settings.cameraId } : undefined, width: 1280, height: 720 },
+      video: { deviceId: settings.cameraId ? { exact: settings.cameraId } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } },
       audio: false,
     });
     video.srcObject = stream;
@@ -225,6 +225,7 @@ function frame(now) {
   if (r) {
     lastBody = r.body;
     pointer.updateHands(r.hands, now, w, h);
+    pointer.updateBody(r.hands.length ? null : r.body, now, w, h, video.videoWidth, video.videoHeight);
     const near = r.faceWidth > settings.enterWidth || r.hands.length > 0;
     if (near || play.paused) lastNearAt = now; // a paused session never times out
     if (state === "done") {

@@ -38,7 +38,33 @@ test("the avatar sits between the shoulders and grows as the pupil comes closer"
   assert.ok(near.s > far.s);
 });
 
-test("no avatar for a body without visible shoulders or one far away", () => {
+test("no avatar for a body without visible shoulders or one too far away", () => {
   assert.equal(target(pose({ 11: { x: 0.6, y: 0.4, visibility: 0.1 } })), null);
-  assert.equal(target(pose({ 11: { x: 0.52, y: 0.4, visibility: 1 }, 12: { x: 0.48, y: 0.4, visibility: 1 } })), null);
+  assert.equal(target(pose({ 11: { x: 0.51, y: 0.4, visibility: 1 }, 12: { x: 0.49, y: 0.4, visibility: 1 } })), null);
+});
+
+import { raisedHands } from "../src/gestures/body-pointer.js";
+
+test("a raised hand gives a pointer, a hanging one does not", () => {
+  const down = raisedHands(pose({ 19: { x: 0.6, y: 0.7, visibility: 1 }, 20: { x: 0.4, y: 0.7, visibility: 1 } }), 1000, 600, 1000, 600);
+  assert.equal(down.length, 0);
+  const up = raisedHands(pose({ 19: { x: 0.6, y: 0.7, visibility: 1 }, 20: { x: 0.4, y: 0.2, visibility: 1 } }), 1000, 600, 1000, 600);
+  assert.equal(up.length, 1);
+  assert.equal(up[0].id, "body-r");
+});
+
+test("body pointers work for a small, far-away pupil and follow the hand sideways", () => {
+  const far = (handX) =>
+    raisedHands(
+      pose({
+        11: { x: 0.52, y: 0.4, visibility: 1 },
+        12: { x: 0.48, y: 0.4, visibility: 1 },
+        20: { x: handX, y: 0.36, visibility: 1 },
+      }),
+      1000, 600, 1000, 600,
+    )[0];
+  const centre = far(0.48);
+  const out = far(0.4); // the pupil's right hand moved away from the body = further right on the mirrored screen
+  assert.ok(out.x > centre.x + 100, `${out.x} vs ${centre.x}`);
+  assert.ok(out.x <= 1000 && out.y >= 0);
 });

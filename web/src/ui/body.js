@@ -2,8 +2,8 @@ import { SHOULDER_UNITS } from "./avatar.js";
 
 // Makes the cartoon kid copy the pupil: it sits on the pupil's shoulders, is as wide as they are,
 // and each arm points the way the pupil's shoulder -> wrist line does.
-const VISIBLE = 0.5; // minimum landmark visibility
-const MIN_SHOULDERS = 0.09; // narrower than this (fraction of the frame) is someone far away
+const VISIBLE = 0.35; // minimum landmark visibility
+const MIN_SHOULDERS = 0.03; // narrower than this (fraction of the frame) is too far away to follow
 const HOLD_S = 0.8; // keep the avatar this long after the body is lost
 const FOLLOW = 14; // smoothing speed, per second
 const REST = 4; // degrees the arms hang out when the wrist is not seen
