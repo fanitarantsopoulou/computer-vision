@@ -19,10 +19,21 @@ export class Tracker {
         return await Cls.createFromOptions(vision, opts("CPU"));
       }
     };
-    const hands = await make(HandLandmarker, "hand_landmarker.task", { numHands: 2 });
-    const faces = await make(FaceDetector, "blaze_face_short_range.tflite", { minDetectionConfidence: 0.6 });
+    const hands = await make(HandLandmarker, "hand_landmarker.task", {
+      numHands: 2,
+      // Lower than the defaults so that small, far-away hands are still picked up.
+      minHandDetectionConfidence: 0.3,
+      minHandPresenceConfidence: 0.3,
+      minTrackingConfidence: 0.3,
+    });
+    const faces = await make(FaceDetector, "blaze_face_short_range.tflite", { minDetectionConfidence: 0.5 });
     // The body only drives the cartoon avatar; the game still works without it.
-    const pose = await make(PoseLandmarker, "pose_landmarker_lite.task", { numPoses: 1 }).catch((e) => {
+    const pose = await make(PoseLandmarker, "pose_landmarker_lite.task", {
+      numPoses: 1,
+      minPoseDetectionConfidence: 0.3,
+      minPosePresenceConfidence: 0.3,
+      minTrackingConfidence: 0.3,
+    }).catch((e) => {
       console.warn("Pose model unavailable, the avatar stays in the corner", e);
       return null;
     });

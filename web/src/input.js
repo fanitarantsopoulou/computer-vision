@@ -1,3 +1,4 @@
+import { raisedHands } from "./gestures/body-pointer.js";
 import { PinchDetector } from "./gestures/pinch.js";
 import { classifyPose, fingerExtensions, indexCurled, pinchDistance, pinchPoint } from "./gestures/geometry.js";
 
@@ -14,6 +15,8 @@ export class Pointer {
     // One slot per hand; a hand is matched to the slot it was nearest to in the previous frame.
     this.slots = [0, 1].map(() => ({ pinch: new PinchDetector(), cursor: null, state: null }));
     this.handSeenAt = -Infinity;
+    this.bodyHands = []; // raised hands read from the body pose; used while the hand model sees none
+    this.bodySeenAt = -Infinity;
     this.mouse = { x: 0, y: 0, down: false, active: false, overUi: false };
 
     target.addEventListener("pointermove", (e) => {
@@ -82,10 +85,31 @@ export class Pointer {
     });
   }
 
-  /** Current pointers: the hands when any was seen recently, otherwise the mouse (for testing and no-camera setups). */
+  /** Feed the body pose (or null to say the hand model has the hands) for this frame. */
+  updateBody(body, nowMs, width, height, vw, vh) {
+    const found = body ? raisedHands(body, vw, vh, width, height) : [];
+    if (!found.length) {
+      this.bodyHands = [];
+      return;
+    }
+    this.bodySeenAt = nowMs;
+    this.bodyHands = found.map((f) => {
+      const old = this.bodyHands.find((o) => o.id === f.id);
+      return {
+        id: f.id,
+        x: old ? SMOOTHING * old.x + (1 - SMOOTHING) * f.x : f.x,
+        y: old ? SMOOTHING * old.y + (1 - SMOOTHING) * f.y : f.y,
+        pinching: false, // no fingers at this distance: holding the hand over a cloud picks it
+        source: "body",
+      };
+    });
+  }
+
+  /** Current pointers: the hands when any was seen recently, then raised hands from the body pose, otherwise the mouse (for testing and no-camera setups). */
   getAll(nowMs) {
     const hands = nowMs - this.handSeenAt < 300 ? this.slots.filter((s) => s.state).map((s) => s.state) : [];
     if (hands.length) return hands;
+    if (nowMs - this.bodySeenAt < 300 && this.bodyHands.length) return this.bodyHands;
     if (this.mouse.active && !this.mouse.overUi) return [{ id: "mouse", x: this.mouse.x, y: this.mouse.y, pinching: this.mouse.down, source: "mouse" }];
     return [];
   }
