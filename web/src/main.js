@@ -224,6 +224,7 @@ function frame(now) {
   const r = tracker?.process(video, now);
   if (r) {
     lastBody = r.body;
+    pointer.setFrame(r.body, now, video.videoWidth, video.videoHeight);
     pointer.updateHands(r.hands, now, w, h);
     pointer.updateBody(r.hands.length ? null : r.body, now, w, h, video.videoWidth, video.videoHeight);
     const near = r.faceWidth > settings.enterWidth || r.hands.length > 0;

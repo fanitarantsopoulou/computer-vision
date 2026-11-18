@@ -1,4 +1,4 @@
-import { raisedHands } from "./gestures/body-pointer.js";
+import { FAR_SPAN, mapRelative, raisedHands, reference } from "./gestures/body-pointer.js";
 import { PinchDetector } from "./gestures/pinch.js";
 import { classifyPose, fingerExtensions, indexCurled, pinchDistance, pinchPoint } from "./gestures/geometry.js";
 
@@ -15,6 +15,8 @@ export class Pointer {
     // One slot per hand; a hand is matched to the slot it was nearest to in the previous frame.
     this.slots = [0, 1].map(() => ({ pinch: new PinchDetector(), cursor: null, state: null }));
     this.handSeenAt = -Infinity;
+    this.ref = null; // the pupil's shoulders {mx, my, span, frac} from the latest pose, and when it was seen
+    this.refAt = -Infinity;
     this.bodyHands = []; // raised hands read from the body pose; used while the hand model sees none
     this.bodySeenAt = -Infinity;
     this.mouse = { x: 0, y: 0, down: false, active: false, overUi: false };
@@ -29,10 +31,24 @@ export class Pointer {
     addEventListener("pointerup", () => (this.mouse.down = false));
   }
 
+  /** Feed the latest body pose (or null) so that a far-away pupil's hands are mapped relative to their shoulders. */
+  setFrame(body, nowMs, vw, vh) {
+    const ref = reference(body, vw, vh);
+    if (ref) {
+      this.ref = ref;
+      this.refAt = nowMs;
+    }
+    this.vw = vw;
+    this.vh = vh;
+  }
+
   /** Feed the tracker's hands (possibly none) for this frame. */
   updateHands(hands, nowMs, width, height) {
+    // A pupil standing far away only moves their hands over a small part of the camera frame: measure from the shoulders instead.
+    const far = this.ref && nowMs - this.refAt < 1000 && this.ref.frac < FAR_SPAN;
     const items = hands.map((hand) => {
       const p = pinchPoint(hand.image);
+      if (far) return { hand, ...mapRelative(p, this.ref, this.vw, this.vh, width, height) };
       return {
         hand,
         x: clamp01((1 - p.x - MARGIN_X) / (1 - 2 * MARGIN_X)) * width, // 1 - x: selfie view

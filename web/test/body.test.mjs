@@ -68,3 +68,35 @@ test("body pointers work for a small, far-away pupil and follow the hand sideway
   assert.ok(out.x > centre.x + 100, `${out.x} vs ${centre.x}`);
   assert.ok(out.x <= 1000 && out.y >= 0);
 });
+
+import { cropFor, easeCrop, gainFor, toFrame } from "../src/tracking/roi.js";
+
+test("the hand crop is 4:3, inside the frame and centred on the shoulders", () => {
+  const far = pose({ 11: { x: 0.54, y: 0.45, visibility: 1 }, 12: { x: 0.46, y: 0.45, visibility: 1 } });
+  const c = cropFor(far, 1920, 1080);
+  assert.ok(Math.abs(c.w / c.h - 4 / 3) < 1e-6);
+  assert.ok(c.x >= 0 && c.y >= 0 && c.x + c.w <= 1920 && c.y + c.h <= 1080);
+  assert.ok(c.x < 960 && c.x + c.w > 960); // the pupil is in the middle
+  assert.ok(c.w < 1920 * 0.85);
+});
+
+test("no crop for a pupil close to the camera or a body that is not seen", () => {
+  assert.equal(cropFor(pose(), 1920, 1080), null); // shoulders 20% wide: the whole frame is fine
+  assert.equal(cropFor(null, 1920, 1080), null);
+});
+
+test("landmarks in the crop map back to the frame", () => {
+  const [p] = toFrame([{ x: 0.5, y: 0.5, z: 0 }], { x: 100, y: 200, w: 800, h: 600 }, 1000, 1000);
+  assert.ok(Math.abs(p.x - 0.5) < 1e-9 && Math.abs(p.y - 0.5) < 1e-9);
+});
+
+test("dim rooms are brightened, bright ones are not", () => {
+  assert.equal(gainFor(200), 1);
+  assert.ok(gainFor(40) > 2);
+  assert.ok(gainFor(1) <= 2.5);
+});
+
+test("the crop eases towards a new position", () => {
+  const e = easeCrop({ x: 0, y: 0, w: 100, h: 75 }, { x: 100, y: 0, w: 100, h: 75 });
+  assert.ok(e.x > 0 && e.x < 100);
+});

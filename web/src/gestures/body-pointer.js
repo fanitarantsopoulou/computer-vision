@@ -14,22 +14,35 @@ const HANDS = [
 
 const clamp = (v, max) => Math.min(max, Math.max(0, v));
 
+/** Where the shoulders are and how wide, from the pose; null when they are not seen well enough. */
+export function reference(body, vw, vh) {
+  const [ls, rs] = body ? [body[11], body[12]] : [];
+  const seen = (p) => p && (p.visibility ?? 1) >= VISIBLE;
+  if (!seen(ls) || !seen(rs) || ls.x - rs.x < MIN_SHOULDERS) return null;
+  return { mx: (ls.x + rs.x) / 2, my: (ls.y + rs.y) / 2, span: (ls.x - rs.x) * vw, frac: ls.x - rs.x };
+}
+
+/** Screen position of a landmark {x, y} measured from the shoulders in shoulder widths (so distance does not matter), and that offset's dy. */
+export function mapRelative(p, ref, vw, vh, w, h) {
+  const dx = (-(p.x - ref.mx) * vw) / ref.span; // mirrored
+  const dy = ((p.y - ref.my) * vh) / ref.span;
+  return { x: clamp(CENTER_X * w + (dx / REACH) * 0.4 * w, w), y: clamp(SHOULDER_Y * h + dy * GAIN_Y * h, h), dy };
+}
+
+/** Below this shoulder width (fraction of the frame) the shoulder-relative mapping reaches further than the frame-wide one. */
+export const FAR_SPAN = 0.138;
+
 /** body: 33 pose landmarks; vw, vh: camera frame; w, h: screen. Returns [{id, x, y}] for each raised hand. */
 export function raisedHands(body, vw, vh, w, h) {
-  const [ls, rs] = [body[11], body[12]];
-  const seen = (p) => p && (p.visibility ?? 1) >= VISIBLE;
-  if (!seen(ls) || !seen(rs) || ls.x - rs.x < MIN_SHOULDERS) return [];
-  const span = (ls.x - rs.x) * vw;
-  const mx = (ls.x + rs.x) / 2;
-  const my = (ls.y + rs.y) / 2;
+  const ref = reference(body, vw, vh);
+  if (!ref) return [];
   const out = [];
   for (const { id, tip, wrist } of HANDS) {
-    const p = seen(body[tip]) ? body[tip] : body[wrist];
-    if (!seen(p)) continue;
-    const dx = (-(p.x - mx) * vw) / span; // mirrored
-    const dy = ((p.y - my) * vh) / span;
-    if (dy > RAISED) continue;
-    out.push({ id, x: clamp(CENTER_X * w + (dx / REACH) * 0.4 * w, w), y: clamp(SHOULDER_Y * h + dy * GAIN_Y * h, h) });
+    const p = (body[tip]?.visibility ?? 1) >= VISIBLE ? body[tip] : body[wrist];
+    if (!p || (p.visibility ?? 1) < VISIBLE) continue;
+    const m = mapRelative(p, ref, vw, vh, w, h);
+    if (m.dy > RAISED) continue;
+    out.push({ id, x: m.x, y: m.y });
   }
   return out;
 }
